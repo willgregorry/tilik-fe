@@ -1,0 +1,76 @@
+# ========================================================
+# Android & Kotlin .gitignore
+# ========================================================
+
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+output-metadata.json
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java / Kotlin class files
+*.class
+
+# Generated build directories
+build/
+**/build/
+app/build/
+bin/
+gen/
+out/
+
+# Gradle files & caches (Penyebab ribuan file jika tidak diabaikan)
+.gradle/
+**/.gradle/
+buildOutput/
+
+# Local configuration file (SDK path pribadi pengguna)
+local.properties
+**/local.properties
+
+# Proguard / R8
+proguard/
+
+# Log Files & Kotlin compiler logs
+*.log
+.kotlin/
+**/.kotlin/
+.kotlin-daemon/
+
+# Android Studio / IntelliJ IDEA
+*.iml
+**/*.iml
+.idea/
+**/.idea/
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+*.iws
+
+# OS / Tool-generated files
+.DS_Store
+Thumbs.db
+captures/
+**/captures/
+.externalNativeBuild
+.cxx/
+**/.cxx/
+
+# Keystore / Signing credentials
+*.jks
+*.keystore
+
+# Package Manager & Environment files (Rahasia / Secrets)
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.pyc

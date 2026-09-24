@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#3B82F6</color>
+    <color name="primary_container">#1E293B</color>
+    <color name="background">#090D16</color>
+    <color name="surface">#18181B</color>
+    <color name="surface_variant">#27272A</color>
+    <color name="on_surface">#F4F4F5</color>
+    <color name="on_surface_muted">#A1A1AA</color>
+    <color name="verdict_valid">#10B981</color>
+    <color name="verdict_misleading">#F59E0B</color>
+    <color name="verdict_invalid">#EF4444</color>
+</resources>
