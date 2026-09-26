@@ -453,23 +453,15 @@ fun ClaimBottomSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left: Grammarly Teal Logo Emblem
+                // Left: Tilik Brand Emblem
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(id = id.tilik.app.R.drawable.favicon),
+                        contentDescription = "Tilik Icon",
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(34.dp)
                             .clip(CircleShape)
-                            .background(GrammarlyTeal),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "T",
-                            color = Color.White,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Black,
-                            fontFamily = FontFamily.SansSerif
-                        )
-                    }
+                    )
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(

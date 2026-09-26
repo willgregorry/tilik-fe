@@ -79,6 +79,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private var isSplashActive by mutableStateOf(true)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         refreshPermissions()
@@ -93,22 +95,36 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TilikTheme {
-                Scaffold(
-                    containerColor = DarkSlateBackground
-                ) { innerPadding ->
-                    MainDashboard(
-                        modifier = Modifier.padding(innerPadding),
-                        hasOverlay = hasOverlayPermission,
-                        hasAudio = hasAudioPermission,
-                        hasProjection = hasProjectionPermission,
-                        isRunning = isServiceRunning,
-                        onRequestOverlay = { requestOverlayPermission() },
-                        onRequestAudio = { requestAudioPermission() },
-                        onRequestProjection = { requestScreenCapture() },
-                        onOpenAccessibility = { openAccessibilitySettings() },
-                        onOpenAppDetails = { openAppDetailsSettings() },
-                        onToggleService = { toggleService() }
-                    )
+                androidx.compose.animation.Crossfade(
+                    targetState = isSplashActive,
+                    animationSpec = androidx.compose.animation.core.tween(450),
+                    label = "SplashCrossfade"
+                ) { showingSplash ->
+                    if (showingSplash) {
+                        id.tilik.app.ui.splash.SplashScreen(
+                            onSplashFinished = {
+                                isSplashActive = false
+                            }
+                        )
+                    } else {
+                        Scaffold(
+                            containerColor = DarkSlateBackground
+                        ) { innerPadding ->
+                            MainDashboard(
+                                modifier = Modifier.padding(innerPadding),
+                                hasOverlay = hasOverlayPermission,
+                                hasAudio = hasAudioPermission,
+                                hasProjection = hasProjectionPermission,
+                                isRunning = isServiceRunning,
+                                onRequestOverlay = { requestOverlayPermission() },
+                                onRequestAudio = { requestAudioPermission() },
+                                onRequestProjection = { requestScreenCapture() },
+                                onOpenAccessibility = { openAccessibilitySettings() },
+                                onOpenAppDetails = { openAppDetailsSettings() },
+                                onToggleService = { toggleService() }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -222,15 +238,15 @@ fun MainDashboard(
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            Text(
-                text = "TILIK",
-                color = AccentBlue,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Black,
-                fontFamily = FontFamily.Monospace,
-                letterSpacing = 2.sp
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(id = R.drawable.logo_name),
+                contentDescription = "Tilik Logo",
+                modifier = Modifier
+                    .height(38.dp)
+                    .padding(bottom = 4.dp),
+                contentScale = androidx.compose.ui.layout.ContentScale.Fit
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "AI-Powered Floating Stock Fact-Checker",
                 color = TextPrimary,

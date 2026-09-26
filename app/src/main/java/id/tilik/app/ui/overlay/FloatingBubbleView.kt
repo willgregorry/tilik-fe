@@ -230,17 +230,17 @@ private fun IdleBubble(
                         )
                     }
                 } else {
-                    // Tampilan normal saat aktif: teks TILIK di tengah lingkaran utuh
+                    // Tampilan normal saat aktif: Icon Tilik di tengah lingkaran utuh
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "TILIK",
-                            color = TextPrimary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
+                        androidx.compose.foundation.Image(
+                            painter = androidx.compose.ui.res.painterResource(id = id.tilik.app.R.drawable.favicon),
+                            contentDescription = "Tilik",
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
                         )
                     }
                 }
