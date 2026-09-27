@@ -177,6 +177,52 @@ Khusus di HP Android dengan sistem keamanan seperti **OriginOS (Vivo)** atau **H
 
 ---
 
+### Skenario 10: Uji Desain Modern 21st Dev Mobile (Neutral Light, Logo Indigo, TopBar & Menubar)
+1. **Buka Aplikasi Tilik:**
+   - Buka aplikasi **Tilik** di HP Anda.
+   - **Hasil yang Diharapkan:**
+     - Latar belakang kini bersih netral (**Clean Off-White** `#F8FAFC`) dengan kartu putih bersih (`#FFFFFF`) dan hairline border halus (`#E2E8F0`).
+     - **TIDAK ADA LAGI** teks "Her 75", tidak ada AI slop, dan tidak ada emoji sama sekali. Semua menggunakan **Vector Icons** resmi.
+2. **Uji Clean TopBar (Header Aplikasi):**
+   - Di sisi **kiri**: Logo Tilik resmi dengan teks judul *"Tilik"* dan *"Pemeriksa Fakta Saham"*.
+   - Di sisi **kanan**: Tombol avatar profil lingkaran bersih dengan aksen Indigo.
+3. **Uji Menubar Bawah (Bottom Navigation Bar):**
+   - Di bagian bawah layar terdapat **Menubar**:
+     - Tab **"Beranda"** (Ikon Home): Menampilkan kontrol widget melayang, checklist kesiapan sistem, dan ringkasan data pasar BEI.
+     - Tab **"Riwayat"** (Ikon History): Menampilkan daftar riwayat pemeriksaan klaim saham tersimpan dengan filter pill (`Semua`, `Valid`, `Meragukan`, `Tidak Valid`).
+   - Ketuk tab **"Riwayat"**: Layar berganti menampilkan kartu verifikasi saham ($BBRI, $GOTO, $BBCA, $AMMN) beserta data net foreign dan valuasi PE/PBV resmi Sectors API.
+4. **Uji Status Badge Netral & Warna Sesuai Logo:**
+   - Aksen utama menggunakan warna **Deep Indigo** (`#4F46E5`) yang selaras persis dengan logo Tilik.
+   - Badge status (`Aktif`, `Standby`, `Valid`, `Tidak Valid`) berpenampilan netral (background abu-abu lembut `#F1F5F9` dengan teks warna status solid, tanpa border mencolok atau opacity 15%).
+
+---
+
+### Skenario 11: Uji Tipografi DM Sans di Seluruh Aplikasi
+1. **Periksa Teks di Seluruh Halaman:**
+   - Perhatikan jenis huruf (*font*) pada TopBar (*"Tilik"*, *"Pemeriksa Fakta Saham"*), judul kartu, tombol, hingga Menubar bawah.
+   - **Hasil yang Diharapkan:**
+     - Seluruh tipografi aplikasi kini menggunakan font **DM Sans** (bersih, geometris, modern, dan sangat nyaman dibaca).
+     - Font dibundle langsung secara offline di dalam APK (`res/font/dm_sans.ttf`) dengan dukungan bobot lengkap (*Regular*, *Medium*, *SemiBold*, *Bold*, hingga *Black*).
+
+---
+
+### Skenario 12: Uji Card & Icon Refactoring (No-Box Icons, Grouped Settings & Tabular Metrics)
+1. **Periksa Kartu Kesiapan Sistem:**
+   - Perhatikan baris-baris perizinan di kartu *"KESIAPAN SISTEM"*.
+   - **Hasil yang Diharapkan:**
+     - **TIDAK ADA LAGI** kotak/box rounded dengan background opacity rendah di sekeliling setiap ikon.
+     - Ikon tampil langsung (*direct inline icon*) berukuran 20dp yang rapi dan terhubung dengan teks judul serta subtitle.
+     - Setiap baris dipisahkan oleh garis tipis (*divider*) 0.8dp ala grouped table/settings di iOS & Linear.
+     - Status izin menampilkan teks *"✓ Aktif"* bersih warna hijau solid atau tombol *"Izinkan"* / *"Bagikan"* berwarna Indigo solid.
+2. **Periksa Kartu Integrasi Pasar:**
+   - Bagian metrik kini menggunakan format 2-kolom bersih (*tabular column*) tanpa rounded box buatan di dalam kartu:
+     - `900+ Emiten` (Cakupan Saham BEI) | `Real-time` (Arus Broker Asing).
+     - Footer jaminan verifikasi menampilkan ikon verifikasi inline yang elegan.
+3. **Periksa Kartu Riwayat Pemeriksaan:**
+   - Kode emiten ($BBRI, $GOTO, dll.) tampil bersih menyatu dengan nama perusahaan tanpa kotak warna buatan.
+
+---
+
 ## 🔍 Logcat Monitoring (Opsional)
 Jika Anda membuka terminal di laptop saat menguji, Anda bisa melihat log proses secara live:
 ```powershell
@@ -188,4 +234,8 @@ Log akan menampilkan:
 - `👇 [DRAG DOWN DISMISS] Sheet ditarik ke bawah -> Menutup sheet`
 - `📜 [AUTO EXPAND] Teks panjang terdeteksi -> Memperluas sheet lebih tinggi`
 - `📐 [TOGGLE EXPAND] Sheet di-toggle -> isExpanded=...`
+
+
+
+
 
