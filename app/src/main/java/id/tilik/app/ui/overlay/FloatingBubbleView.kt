@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import id.tilik.app.model.OverlayState
+import id.tilik.app.ui.theme.AppCard
 import id.tilik.app.ui.theme.BrandPrimary
 import id.tilik.app.ui.theme.BrandSecondary
 import id.tilik.app.ui.theme.StatusDanger
@@ -125,7 +126,7 @@ private fun IdleBubble(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .clip(RoundedCornerShape(28.dp))
-                .background(Color.White)
+                .background(AppCard)
                 .border(
                     width = 1.5.dp,
                     color = BrandPrimary,
@@ -139,7 +140,7 @@ private fun IdleBubble(
                 modifier = Modifier
                     .size(52.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFF1F5F9))
+                    .background(Color(0xFF1E1E1E))
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -182,7 +183,7 @@ private fun IdleBubble(
             modifier = Modifier
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(Color.White)
+                .background(AppCard)
                 .border(
                     width = 1.5.dp,
                     color = BrandPrimary,
@@ -248,7 +249,7 @@ private fun CapturingBubble(onClick: () -> Unit) {
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(Color.White)
+                .background(AppCard)
                 .border(2.dp, BrandPrimary, CircleShape)
         ) {
             CircularProgressIndicator(
@@ -268,7 +269,7 @@ private fun AnalyzingCapsule() {
         modifier = Modifier
             .height(42.dp)
             .clip(RoundedCornerShape(21.dp))
-            .background(Color.White)
+            .background(AppCard)
             .border(1.5.dp, BrandPrimary, RoundedCornerShape(21.dp))
             .padding(horizontal = 14.dp)
     ) {
@@ -297,8 +298,8 @@ private fun ErrorBubble(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(Color.White)
-            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+            .background(AppCard)
+            .border(1.dp, Color(0x14FFFFFF), RoundedCornerShape(12.dp))
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
         Text(

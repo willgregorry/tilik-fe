@@ -66,21 +66,24 @@ import id.tilik.app.data.model.VerificationResponse
 import id.tilik.app.data.util.FinancialFormatter
 import id.tilik.app.ui.theme.BrandPrimary
 import id.tilik.app.ui.theme.StatusDanger
+import id.tilik.app.ui.theme.StatusDangerBg
 import id.tilik.app.ui.theme.StatusSuccess
+import id.tilik.app.ui.theme.StatusSuccessBg
 import id.tilik.app.ui.theme.StatusWarning
+import id.tilik.app.ui.theme.StatusWarningBg
 import id.tilik.app.ui.theme.TextMuted
 import id.tilik.app.ui.theme.TextPrimary
 import id.tilik.app.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-// Clean Fintech Design Tokens (OVO / GoPay style - NO glowing card, NO lowered opacity borders)
-private val CardBackground = Color(0xFFFFFFFF)
-private val SectionCardBg = Color(0xFFF8FAFC)
-private val BorderColor = Color(0xFFE2E8F0)
-private val TextDark = Color(0xFF0F172A)
-private val TextBody = Color(0xFF334155)
-private val TextSubtle = Color(0xFF64748B)
+// Reference Dark Investment Design Tokens
+private val CardBackground = Color(0xFF0A0A0A)
+private val SectionCardBg = Color(0xFF141414)
+private val BorderColor = Color(0x14FFFFFF)
+private val TextDark = Color(0xFFFFFFFF)
+private val TextBody = Color(0xFFE2E8F0)
+private val TextSubtle = Color(0xFF888888)
 
 @Composable
 fun VerdictCardView(
@@ -277,7 +280,7 @@ private fun HeaderSection(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFF1F5F9))
+                    .background(Color(0xFF1E1E1E))
                     .border(1.dp, BorderColor, RoundedCornerShape(8.dp))
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
@@ -308,7 +311,7 @@ private fun HeaderSection(
             modifier = Modifier
                 .size(32.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFF1F5F9))
+                .background(Color(0xFF1E1E1E))
                 .clickable { onCloseClick() },
             contentAlignment = Alignment.Center
         ) {
@@ -389,7 +392,7 @@ private fun VerdictHeroBanner(data: VerificationResponse) {
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFFF1F5F9))
+                        .background(Color(0xFF1E1E1E))
                         .border(1.dp, BorderColor, RoundedCornerShape(6.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
@@ -690,7 +693,7 @@ private fun MarketDataSection(data: VerificationResponse) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color.White)
+                            .background(SectionCardBg)
                             .border(1.dp, BorderColor, RoundedCornerShape(10.dp))
                             .padding(horizontal = 12.dp, vertical = 10.dp)
                     ) {
@@ -792,7 +795,7 @@ private fun MarketDataSection(data: VerificationResponse) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(Color.White)
+                                .background(StatusDangerBg)
                                 .border(1.dp, StatusDanger, RoundedCornerShape(6.dp))
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
@@ -816,8 +819,8 @@ private fun MarketDataSection(data: VerificationResponse) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(Color.White)
-                                .border(1.dp, BorderColor, RoundedCornerShape(6.dp))
+                                .background(StatusSuccessBg)
+                                .border(1.dp, Color(0x3322C55E), RoundedCornerShape(6.dp))
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -853,7 +856,7 @@ private fun MarketDataSection(data: VerificationResponse) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(Color.White)
+                                .background(StatusWarningBg)
                                 .border(1.dp, StatusWarning, RoundedCornerShape(6.dp))
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
@@ -888,7 +891,7 @@ private fun MetricStatBox(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
-            .background(Color.White)
+            .background(SectionCardBg)
             .border(1.dp, BorderColor, RoundedCornerShape(10.dp))
             .padding(14.dp)
     ) {

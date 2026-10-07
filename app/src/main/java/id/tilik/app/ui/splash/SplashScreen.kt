@@ -38,9 +38,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import id.tilik.app.R
+import id.tilik.app.ui.theme.AppBackground
 import id.tilik.app.ui.theme.BrandDark
 import id.tilik.app.ui.theme.BrandPrimary
 import id.tilik.app.ui.theme.BrandSecondary
+import id.tilik.app.ui.theme.TextPrimary
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -82,7 +84,7 @@ fun SplashScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White),
+            .background(AppBackground),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -151,7 +153,7 @@ private fun BouncingTilikText(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     text = letter,
-                    color = BrandDark,
+                    color = TextPrimary,
                     fontSize = 34.sp,
                     fontWeight = FontWeight.Black,
                     fontFamily = FontFamily.SansSerif,

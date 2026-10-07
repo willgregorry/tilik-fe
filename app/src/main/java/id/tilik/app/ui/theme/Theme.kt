@@ -5,47 +5,61 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Brand Colors matching Tilik Logo (Indigo / Royal Blue & Violet)
-val BrandPrimary = Color(0xFF4F46E5)       // Deep Indigo from Logo
-val BrandSecondary = Color(0xFF7C5AF6)     // Violet Accent from Logo
-val BrandDark = Color(0xFF0F172A)
+// Reference Design Tokens from investment_app_ui_clone.html
+val AppBg = Color(0xFF0A0A0A)              // Deep rich dark background
+val AppCard = Color(0xFF141414)            // Elevated dark card surface
+val AppCardSubtle = Color(0xFF1A1A1A)      // Secondary subtle container
+val AppAccent = Color(0xFFFF5C35)          // Fire coral / modern investment accent
+val AppGreen = Color(0xFF22C55E)           // Vibrant bull green
+val AppGreenBg = Color(0xFF0F2115)         // Bullish pill container
+val AppGreenBorder = Color(0x3322C55E)     // Bullish hairline border
+val AppRed = Color(0xFFEF4444)             // Vibrant bear red
+val AppRedBg = Color(0xFF241113)           // Bearish pill container
+val AppRedBorder = Color(0x33EF4444)       // Bearish hairline border
+val AppGray = Color(0xFF888888)            // Neutral muted text
+val AppGrayDark = Color(0xFF737373)        // Section header subtitle
 
-// Neutral 21st-Century Clean Light Architecture
-val AppBackground = Color(0xFFF8FAFC)      // Clean neutral off-white
-val AppSurface = Color(0xFFFFFFFF)         // Crisp white card
-val AppSurfaceSubtle = Color(0xFFF1F5F9)   // Subtle gray container
-val AppBorder = Color(0xFFE2E8F0)          // Crisp hairline border
-val AppBorderLight = Color(0xFFF1F5F9)
+// Compatibility Tokens
+val BrandPrimary = AppAccent
+val BrandSecondary = Color(0xFFFF7E5F)
+val BrandDark = AppBg
 
-// Neutral State Colors (No flashy low-opacity borders)
-val StatusSuccess = Color(0xFF16A34A)      // Neutral dark green
-val StatusSuccessBg = Color(0xFFF0FDF4)
-val StatusDanger = Color(0xFFDC2626)       // Neutral clean red
-val StatusDangerBg = Color(0xFFFEF2F2)
-val StatusWarning = Color(0xFFD97706)      // Neutral warm amber
-val StatusWarningBg = Color(0xFFFFFBEB)
-val StatusNeutral = Color(0xFF64748B)
-val StatusNeutralBg = Color(0xFFF1F5F9)
+val AppBackground = AppBg
+val AppSurface = AppCard
+val AppSurfaceSubtle = AppCardSubtle
+val AppBorder = Color(0x14FFFFFF)          // 8% white hairline border (border-white/5)
+val AppBorderLight = Color(0x0FFFFFFF)     // 6% white hairline divider
 
-// High-contrast clean typography
-val TextPrimary = Color(0xFF0F172A)        // Deep slate black
-val TextSecondary = Color(0xFF475569)      // Slate body
-val TextMuted = Color(0xFF94A3B8)          // Subtle caption
+// Status State Colors
+val StatusSuccess = AppGreen
+val StatusSuccessBg = AppGreenBg
+val StatusDanger = AppRed
+val StatusDangerBg = AppRedBg
+val StatusWarning = Color(0xFFF59E0B)
+val StatusWarningBg = Color(0xFF221A0F)
+val StatusNeutral = AppGray
+val StatusNeutralBg = AppCardSubtle
 
-// Compatibility mappings
+// Clean Modern Typography Colors
+val TextPrimary = Color(0xFFFFFFFF)        // Crisp white
+val TextSecondary = AppGray                // Modern gray
+val TextMuted = AppGrayDark                // Section header
+
+// Overlay Compatibility mappings
 val DarkSlateBackground = AppBackground
 val DarkSlateSurface = AppSurface
 val DarkSlateBorder = AppBorder
-val AccentBlue = BrandPrimary
+val AccentBlue = AppAccent
 val VerdictValid = StatusSuccess
 val VerdictMisleading = StatusWarning
 val VerdictInvalid = StatusDanger
 
-private val CleanLightColorScheme = lightColorScheme(
-    primary = BrandPrimary,
+private val InvestmentDarkColorScheme = androidx.compose.material3.darkColorScheme(
+    primary = AppAccent,
     secondary = BrandSecondary,
     background = AppBackground,
     surface = AppSurface,
+    surfaceVariant = AppSurfaceSubtle,
     onPrimary = Color.White,
     onSecondary = Color.White,
     onBackground = TextPrimary,
@@ -55,7 +69,7 @@ private val CleanLightColorScheme = lightColorScheme(
 @Composable
 fun TilikTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = CleanLightColorScheme,
+        colorScheme = InvestmentDarkColorScheme,
         typography = AppTypography
     ) {
         androidx.compose.runtime.CompositionLocalProvider(

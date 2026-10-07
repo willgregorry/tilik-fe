@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,43 +38,98 @@ import id.tilik.app.ui.theme.BrandPrimary
 import id.tilik.app.ui.theme.TextPrimary
 import id.tilik.app.ui.theme.TextSecondary
 
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.rounded.Person
+import id.tilik.app.ui.theme.AppAccent
+import id.tilik.app.ui.theme.AppBackground
+import id.tilik.app.ui.theme.AppCard
+import id.tilik.app.ui.theme.AppRed
+
 @Composable
 fun AppTopBar(
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onNotificationClick: () -> Unit = {},
+    hasUnreadNotification: Boolean = true,
+    userName: String = "Matthew"
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(AppSurface)
+            .background(AppBackground)
             .statusBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Left side: App Logo & Name Asset
-        Image(
-            painter = painterResource(id = R.drawable.logo_name),
-            contentDescription = "Tilik",
-            modifier = Modifier.height(36.dp),
-            contentScale = androidx.compose.ui.layout.ContentScale.Fit
-        )
+        // Left side: User Avatar + Greeting
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable { onProfileClick() }
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(AppCard)
+                    .border(1.dp, Color(0x1AFFFFFF), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.favicon),
+                    contentDescription = "Avatar",
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                )
+            }
 
-        // Right side: Clean User Profile Avatar
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column {
+                Text(
+                    text = "Hi, Good morning",
+                    color = TextSecondary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Normal
+                )
+                Text(
+                    text = userName,
+                    color = TextPrimary,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
+        // Right side: Notification Button with Unread Badge
         Box(
             modifier = Modifier
-                .size(38.dp)
+                .size(44.dp)
                 .clip(CircleShape)
-                .background(AppSurfaceSubtle)
-                .border(1.dp, AppBorder, CircleShape)
-                .clickable { onProfileClick() },
+                .background(AppCard)
+                .border(1.dp, Color(0x14FFFFFF), CircleShape)
+                .clickable { onNotificationClick() },
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Rounded.Person,
-                contentDescription = "Profil",
-                tint = BrandPrimary,
+                imageVector = Icons.Outlined.Notifications,
+                contentDescription = "Notifications",
+                tint = TextPrimary,
                 modifier = Modifier.size(20.dp)
             )
+
+            if (hasUnreadNotification) {
+                Box(
+                    modifier = Modifier
+                        .size(9.dp)
+                        .align(Alignment.TopEnd)
+                        .padding(top = 2.dp, end = 2.dp)
+                        .clip(CircleShape)
+                        .background(AppRed)
+                        .border(1.5.dp, AppCard, CircleShape)
+                )
+            }
         }
     }
 }

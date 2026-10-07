@@ -3,12 +3,14 @@ package id.tilik.app.ui.history
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,6 +31,13 @@ import id.tilik.app.ui.theme.TextMuted
 import id.tilik.app.ui.theme.TextPrimary
 import id.tilik.app.ui.theme.TextSecondary
 
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import id.tilik.app.ui.theme.AppCard
+import id.tilik.app.ui.theme.AppGreen
+import id.tilik.app.ui.theme.AppRed
+
 data class HistoryItem(
     val id: String,
     val ticker: String,
@@ -46,18 +55,34 @@ fun HistoryItemCard(
     item: HistoryItem,
     onClick: () -> Unit = {}
 ) {
-    Card(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, AppBorder, RoundedCornerShape(14.dp))
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = AppSurface),
-        shape = RoundedCornerShape(14.dp)
+            .clickable { onClick() }
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.Top
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+        // Squircle Icon Container matching clone: w-11 h-11 rounded-[14px] bg-app-card border border-white/5
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(AppCard)
+                .border(1.dp, Color(0x14FFFFFF), RoundedCornerShape(14.dp)),
+            contentAlignment = Alignment.Center
         ) {
-            // Header: Ticker, Company Name, and Status Badge
+            Text(
+                text = item.ticker.take(2),
+                color = TextPrimary,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        // Body content
+        Column(modifier = Modifier.weight(1f)) {
+            // Header Row: Title + Timestamp
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -65,56 +90,51 @@ fun HistoryItemCard(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = item.ticker,
+                        text = "${item.ticker} · ${item.verdictTitle}",
                         color = TextPrimary,
                         fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = " · ${item.companyName}",
-                        color = TextSecondary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Normal
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
 
-                StatusBadge(
-                    text = item.verdictTitle,
-                    type = item.verdictType
+                Text(
+                    text = item.timestamp,
+                    color = TextSecondary,
+                    fontSize = 11.sp
                 )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(3.dp))
 
-            // Claim quote
+            // Concise Claim description
             Text(
-                text = "\"${item.claim}\"",
-                color = TextPrimary,
+                text = item.claim,
+                color = TextSecondary,
                 fontSize = 13.sp,
                 lineHeight = 18.sp,
                 fontWeight = FontWeight.Normal
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            HorizontalDivider(color = AppBorderLight, thickness = 0.8.dp)
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Clean Footer
+            // Subtle Metric row
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = item.foreignFlow,
-                    color = TextSecondary,
+                    color = TextMuted,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = item.timestamp,
+                    text = "·",
+                    color = TextMuted,
+                    fontSize = 11.sp
+                )
+                Text(
+                    text = item.valuationNote,
                     color = TextMuted,
                     fontSize = 11.sp
                 )

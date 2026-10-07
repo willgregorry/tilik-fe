@@ -24,6 +24,7 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,9 +55,9 @@ fun MarketOverviewCard() {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, AppBorder, RoundedCornerShape(14.dp)),
+                .border(1.dp, Color(0x14FFFFFF), RoundedCornerShape(20.dp)),
             colors = CardDefaults.cardColors(containerColor = AppSurface),
-            shape = RoundedCornerShape(14.dp)
+            shape = RoundedCornerShape(20.dp)
         ) {
             Column(modifier = Modifier.padding(18.dp)) {
                 // Two Column Metric
@@ -83,7 +84,7 @@ fun MarketOverviewCard() {
                     }
 
                     VerticalDivider(
-                        color = AppBorderLight,
+                        color = Color(0x0FFFFFFF),
                         thickness = 1.dp,
                         modifier = Modifier
                             .fillMaxHeight()
@@ -108,7 +109,7 @@ fun MarketOverviewCard() {
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                HorizontalDivider(color = AppBorderLight, thickness = 0.8.dp)
+                HorizontalDivider(color = Color(0x0FFFFFFF), thickness = 0.8.dp)
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -125,7 +126,7 @@ fun MarketOverviewCard() {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Terhubung langsung dengan Sectors Financial API",
+                        text = "Terhubung dengan Sectors Financial API",
                         color = TextSecondary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium

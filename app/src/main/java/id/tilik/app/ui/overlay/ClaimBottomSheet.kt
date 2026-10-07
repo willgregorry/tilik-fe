@@ -85,6 +85,7 @@ import kotlin.math.roundToInt
 import id.tilik.app.detection.StockKeywordDetector
 import id.tilik.app.ui.theme.BrandPrimary
 import id.tilik.app.ui.theme.BrandSecondary
+import id.tilik.app.ui.theme.AppCard
 import id.tilik.app.ui.theme.DarkSlateBackground
 import id.tilik.app.ui.theme.DarkSlateBorder
 import id.tilik.app.ui.theme.DarkSlateSurface
@@ -95,13 +96,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-// Theme Colors matching Beranda & Logo
-private val SheetBackground = Color(0xFFFFFFFF)
-private val SheetCardBg = Color(0xFFF8FAFC)
-private val SheetBorder = Color(0xFFE2E8F0)
+// Theme Colors matching Dark Investment Design System
+private val SheetBackground = Color(0xFF0A0A0A)
+private val SheetCardBg = Color(0xFF141414)
+private val SheetBorder = Color(0x14FFFFFF)
 private val BrandIndigo = BrandPrimary
 private val BrandViolet = BrandSecondary
-private val BrandVioletLight = Color(0xFFEEF2FF)
+private val BrandVioletLight = Color(0xFF1E1E1E)
 
 /**
  * Modal Bottom Sheet ala Grammarly yang muncul langsung di atas Threads atau WhatsApp
@@ -467,7 +468,7 @@ fun ClaimBottomSheet(
                     modifier = Modifier
                         .size(34.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFF1F5F9))
+                        .background(Color(0xFF1E1E1E))
                         .clickable { animateAndDismiss() },
                     contentAlignment = Alignment.Center
                 ) {
@@ -516,7 +517,7 @@ fun ClaimBottomSheet(
                         modifier = Modifier
                             .size(54.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFF1F5F9)),
+                            .background(Color(0xFF1E1E1E)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -540,7 +541,7 @@ fun ClaimBottomSheet(
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = "Salin teks diskusi saham dari media sosial atau ketik klaim di sini untuk menilik data fundamental dan pergerakan broker asing.",
+                        text = "Salin teks klaim atau ketik di sini untuk memverifikasi data fundamental dan transaksi pasar.",
                         color = TextSecondary,
                         fontSize = 12.5.sp,
                         lineHeight = 18.sp,
@@ -595,7 +596,7 @@ fun ClaimBottomSheet(
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(6.dp))
-                                            .background(Color(0xFFF1F5F9))
+                                            .background(Color(0xFF1E1E1E))
                                             .border(1.dp, SheetBorder, RoundedCornerShape(6.dp))
                                             .padding(horizontal = 8.dp, vertical = 4.dp)
                                     ) {
@@ -611,7 +612,7 @@ fun ClaimBottomSheet(
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(6.dp))
-                                            .background(Color(0xFFF1F5F9))
+                                            .background(Color(0xFF1E1E1E))
                                             .border(1.dp, SheetBorder, RoundedCornerShape(6.dp))
                                             .padding(horizontal = 8.dp, vertical = 4.dp)
                                     ) {
@@ -696,10 +697,10 @@ fun ClaimBottomSheet(
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedTextColor = TextPrimary,
                                     unfocusedTextColor = TextPrimary,
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White,
+                                    focusedContainerColor = AppCard,
+                                    unfocusedContainerColor = AppCard,
                                     focusedBorderColor = BrandPrimary,
-                                    unfocusedBorderColor = Color(0xFFCBD5E1),
+                                    unfocusedBorderColor = Color(0x1AFFFFFF),
                                     cursorColor = BrandPrimary
                                 ),
                                 shape = RoundedCornerShape(12.dp),
@@ -723,8 +724,8 @@ fun ClaimBottomSheet(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = BrandPrimary,
                             contentColor = Color.White,
-                            disabledContainerColor = Color(0xFFF1F5F9),
-                            disabledContentColor = Color(0xFF94A3B8)
+                            disabledContainerColor = Color(0xFF1E1E1E),
+                            disabledContentColor = Color(0xFF737373)
                         ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier

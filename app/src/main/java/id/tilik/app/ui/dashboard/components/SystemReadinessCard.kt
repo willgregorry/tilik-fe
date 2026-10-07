@@ -41,6 +41,8 @@ import id.tilik.app.ui.theme.TextMuted
 import id.tilik.app.ui.theme.TextPrimary
 import id.tilik.app.ui.theme.TextSecondary
 
+import androidx.compose.material.icons.automirrored.rounded.ScreenShare
+
 @Composable
 fun SystemReadinessCard(
     hasOverlay: Boolean,
@@ -53,7 +55,7 @@ fun SystemReadinessCard(
     val activeCount = listOf(hasOverlay, hasProjection, true, true).count { it }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        // Section Label (Grouped iOS / Settings Style)
+        // Section Label
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -82,28 +84,28 @@ fun SystemReadinessCard(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, AppBorder, RoundedCornerShape(14.dp)),
+                .border(1.dp, Color(0x14FFFFFF), RoundedCornerShape(20.dp)),
             colors = CardDefaults.cardColors(containerColor = AppSurface),
-            shape = RoundedCornerShape(14.dp)
+            shape = RoundedCornerShape(20.dp)
         ) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 SettingRow(
                     icon = Icons.Rounded.Layers,
                     title = "Floating Overlay",
-                    subtitle = "Izin melayang di atas aplikasi lain",
+                    subtitle = "Izin melayang di atas aplikasi",
                     isGranted = hasOverlay,
                     actionLabel = "Izinkan",
                     onAction = onRequestOverlay
                 )
 
                 HorizontalDivider(
-                    color = AppBorderLight,
+                    color = Color(0x0FFFFFFF),
                     thickness = 0.8.dp,
                     modifier = Modifier.padding(start = 32.dp)
                 )
 
                 SettingRow(
-                    icon = Icons.Rounded.ScreenShare,
+                    icon = Icons.AutoMirrored.Rounded.ScreenShare,
                     title = "Tangkapan Layar",
                     subtitle = "MediaProjection pembaca klaim",
                     isGranted = hasProjection,
@@ -112,32 +114,32 @@ fun SystemReadinessCard(
                 )
 
                 HorizontalDivider(
-                    color = AppBorderLight,
+                    color = Color(0x0FFFFFFF),
                     thickness = 0.8.dp,
                     modifier = Modifier.padding(start = 32.dp)
                 )
 
                 SettingRow(
                     icon = Icons.Rounded.ContentCopy,
-                    title = "Deteksi Clipboard",
-                    subtitle = "Aksesibilitas sinkronisasi otomatis",
+                    title = "Deteksi Teks",
+                    subtitle = "Aksesibilitas deteksi otomatis",
                     isGranted = true,
                     actionLabel = "Atur",
                     onAction = onOpenAccessibility
                 )
 
                 HorizontalDivider(
-                    color = AppBorderLight,
+                    color = Color(0x0FFFFFFF),
                     thickness = 0.8.dp,
                     modifier = Modifier.padding(start = 32.dp)
                 )
 
                 SettingRow(
                     icon = Icons.Rounded.Security,
-                    title = "Setelan Latar Belakang",
-                    subtitle = "Perlindungan memori OriginOS/HyperOS",
+                    title = "Latar Belakang",
+                    subtitle = "Proteksi memori & baterai",
                     isGranted = true,
-                    actionLabel = "Buka Info",
+                    actionLabel = "Info",
                     onAction = onOpenAppDetails
                 )
             }
@@ -207,12 +209,12 @@ private fun SettingRow(
         } else {
             Button(
                 onClick = onAction,
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(percent = 50),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = BrandPrimary,
                     contentColor = Color.White
                 ),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                 modifier = Modifier.height(30.dp)
             ) {
                 Text(

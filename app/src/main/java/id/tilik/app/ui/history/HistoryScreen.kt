@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Search
@@ -44,9 +46,12 @@ import id.tilik.app.ui.theme.TextMuted
 import id.tilik.app.ui.theme.TextPrimary
 import id.tilik.app.ui.theme.TextSecondary
 
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+
 @Composable
 fun HistoryScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBackClick: (() -> Unit)? = null
 ) {
     var selectedFilter by remember { mutableStateOf("Semua") }
     val filters = listOf("Semua", "Valid", "Meragukan", "Tidak Valid")
@@ -57,12 +62,12 @@ fun HistoryScreen(
                 id = "1",
                 ticker = "BBRI",
                 companyName = "Bank Rakyat Indonesia",
-                claim = "BBRI cetak laba bersih kuartal ini tembus rekor dan asing akumulasi masif.",
+                claim = "BBRI cetak laba bersih rekor kuartal ini dan asing akumulasi masif.",
                 verdictTitle = "Valid",
                 verdictType = BadgeType.SUCCESS,
-                timestamp = "10 menit yang lalu",
-                foreignFlow = "Net Foreign: +Rp 340,5 Miliar",
-                valuationNote = "PE: 11.2x | PBV: 2.1x"
+                timestamp = "10:35 PM",
+                foreignFlow = "Net Foreign: +Rp 340,5M",
+                valuationNote = "PE 11.2x | PBV 2.1x"
             ),
             HistoryItem(
                 id = "2",
@@ -71,31 +76,31 @@ fun HistoryScreen(
                 claim = "GOTO targetkan dividen jumbo tahun ini setelah efisiensi beban.",
                 verdictTitle = "Tidak Valid",
                 verdictType = BadgeType.DANGER,
-                timestamp = "2 jam yang lalu",
-                foreignFlow = "Net Foreign: -Rp 42,1 Miliar",
-                valuationNote = "Belum membagikan dividen tunai historis"
+                timestamp = "07:22 AM",
+                foreignFlow = "Net Foreign: -Rp 42,1M",
+                valuationNote = "Belum ada dividen tunai historis"
             ),
             HistoryItem(
                 id = "3",
                 ticker = "BBCA",
                 companyName = "Bank Central Asia",
-                claim = "Asing terus buang barang di saham BBCA karena valuasi sudah kemahalan.",
+                claim = "Asing buang saham BBCA karena valuasi dianggap sudah kemahalan.",
                 verdictTitle = "Meragukan",
                 verdictType = BadgeType.WARNING,
-                timestamp = "Kemarin",
-                foreignFlow = "Net Foreign: Netral (-Rp 12 Miliar)",
-                valuationNote = "PBV 4.8x konsisten dengan rata-rata 5 tahun"
+                timestamp = "Kemarin, 09:01 AM",
+                foreignFlow = "Net Foreign: Netral (-Rp 12M)",
+                valuationNote = "PBV 4.8x wajar rata-rata 5 thn"
             ),
             HistoryItem(
                 id = "4",
                 ticker = "AMMN",
                 companyName = "Amman Mineral Internasional",
-                claim = "Kenaikan laba AMMN didorong lonjakan produksi konsentrat tembaga.",
+                claim = "Kenaikan laba AMMN didorong lonjakan konsentrat tembaga.",
                 verdictTitle = "Valid",
                 verdictType = BadgeType.SUCCESS,
-                timestamp = "2 hari yang lalu",
-                foreignFlow = "Net Foreign: +Rp 88,2 Miliar",
-                valuationNote = "Sesuai laporan keuangan kuartalan BEI"
+                timestamp = "2 hari lalu",
+                foreignFlow = "Net Foreign: +Rp 88,2M",
+                valuationNote = "Sesuai LK kuartalan BEI"
             )
         )
     }
@@ -111,61 +116,106 @@ fun HistoryScreen(
             .background(AppBackground)
             .padding(horizontal = 20.dp)
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Title & Summary
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = "Riwayat Pemeriksaan",
-                    color = TextPrimary,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.4).sp
-                )
-                Text(
-                    text = "${filteredList.size} verifikasi tersimpan dari bursa",
-                    color = TextSecondary,
-                    fontSize = 13.sp
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Filter Pills
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(filters) { filter ->
-                val isSelected = filter == selectedFilter
+        // Sticky / Clean Header
+        if (onBackClick != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(if (isSelected) BrandPrimary else AppSurface)
-                        .border(
-                            width = 1.dp,
-                            color = if (isSelected) BrandPrimary else AppBorder,
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                        .clickable { selectedFilter = filter }
-                        .padding(horizontal = 14.dp, vertical = 7.dp)
+                        .size(40.dp)
+                        .align(Alignment.CenterStart)
+                        .clip(CircleShape)
+                        .background(AppSurface)
+                        .border(1.dp, Color(0x14FFFFFF), CircleShape)
+                        .clickable { onBackClick() },
+                    contentAlignment = Alignment.Center
                 ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "Kembali",
+                        tint = TextPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                Text(
+                    text = "Notifications",
+                    color = TextPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
                     Text(
-                        text = filter,
-                        color = if (isSelected) androidx.compose.ui.graphics.Color.White else TextSecondary,
-                        fontSize = 12.sp,
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                        text = "Notifications & Riwayat",
+                        color = TextPrimary,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.4).sp
+                    )
+                    Text(
+                        text = "${filteredList.size} catatan verifikasi bursa",
+                        color = TextSecondary,
+                        fontSize = 13.sp
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Filter Pills matching clone: All Notifications (white bg, black text), others dark card
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            items(filters) { filter ->
+                val isSelected = filter == selectedFilter
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(percent = 50))
+                        .background(if (isSelected) Color.White else AppSurface)
+                        .border(
+                            width = 1.dp,
+                            color = if (isSelected) Color.White else Color(0x14FFFFFF),
+                            shape = RoundedCornerShape(percent = 50)
+                        )
+                        .clickable { selectedFilter = filter }
+                        .padding(horizontal = 18.dp, vertical = 9.dp)
+                ) {
+                    Text(
+                        text = filter,
+                        color = if (isSelected) Color.Black else TextSecondary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Date Group Header from clone
+        Text(
+            text = "Jumat, 28 Maret 2025",
+            color = TextSecondary,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
 
         // History Items List
         if (filteredList.isEmpty()) {
@@ -184,7 +234,7 @@ fun HistoryScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Belum ada riwayat untuk filter ini",
+                        text = "Belum ada verifikasi untuk filter ini",
                         color = TextSecondary,
                         fontSize = 13.sp
                     )
@@ -193,13 +243,13 @@ fun HistoryScreen(
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(filteredList, key = { it.id }) { item ->
                     HistoryItemCard(item = item)
                 }
                 item {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
             }
         }

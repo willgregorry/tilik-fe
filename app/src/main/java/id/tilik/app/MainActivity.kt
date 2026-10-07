@@ -14,6 +14,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -84,47 +85,93 @@ class MainActivity : ComponentActivity() {
                         )
                     } else {
                         var currentTab by remember { mutableStateOf(AppTab.HOME) }
+                        var isNotificationsScreenVisible by remember { mutableStateOf(false) }
 
-                        Scaffold(
-                            containerColor = AppBackground,
-                            topBar = {
-                                AppTopBar(
-                                    onProfileClick = {
-                                        openAppDetailsSettings()
-                                    }
-                                )
-                            },
-                            bottomBar = {
-                                AppBottomNav(
-                                    currentTab = currentTab,
-                                    onTabSelected = { selected ->
-                                        currentTab = selected
-                                    }
-                                )
-                            }
-                        ) { innerPadding ->
+                        if (isNotificationsScreenVisible) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(innerPadding)
+                                    .background(AppBackground)
                             ) {
-                                when (currentTab) {
-                                    AppTab.HOME -> {
-                                        DashboardScreen(
-                                            hasOverlay = hasOverlayPermission,
-                                            hasAudio = hasAudioPermission,
-                                            hasProjection = hasProjectionPermission,
-                                            isRunning = isServiceRunning,
-                                            onRequestOverlay = { requestOverlayPermission() },
-                                            onRequestAudio = { requestAudioPermission() },
-                                            onRequestProjection = { requestScreenCapture() },
-                                            onOpenAccessibility = { openAccessibilitySettings() },
-                                            onOpenAppDetails = { openAppDetailsSettings() },
-                                            onToggleService = { toggleService() }
-                                        )
-                                    }
-                                    AppTab.HISTORY -> {
-                                        HistoryScreen()
+                                HistoryScreen(
+                                    onBackClick = { isNotificationsScreenVisible = false }
+                                )
+                            }
+                        } else {
+                            Scaffold(
+                                containerColor = AppBackground,
+                                topBar = {
+                                    AppTopBar(
+                                        onProfileClick = {
+                                            openAppDetailsSettings()
+                                        },
+                                        onNotificationClick = {
+                                            isNotificationsScreenVisible = true
+                                        },
+                                        hasUnreadNotification = true
+                                    )
+                                },
+                                bottomBar = {
+                                    AppBottomNav(
+                                        currentTab = currentTab,
+                                        onTabSelected = { selected ->
+                                            currentTab = selected
+                                        }
+                                    )
+                                }
+                            ) { innerPadding ->
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding)
+                                ) {
+                                    when (currentTab) {
+                                        AppTab.HOME -> {
+                                            DashboardScreen(
+                                                hasOverlay = hasOverlayPermission,
+                                                hasAudio = hasAudioPermission,
+                                                hasProjection = hasProjectionPermission,
+                                                isRunning = isServiceRunning,
+                                                onRequestOverlay = { requestOverlayPermission() },
+                                                onRequestAudio = { requestAudioPermission() },
+                                                onRequestProjection = { requestScreenCapture() },
+                                                onOpenAccessibility = { openAccessibilitySettings() },
+                                                onOpenAppDetails = { openAppDetailsSettings() },
+                                                onToggleService = { toggleService() },
+                                                onNavigateToDetails = { currentTab = AppTab.PORTFOLIO }
+                                            )
+                                        }
+                                        AppTab.MARKETS -> {
+                                            DashboardScreen(
+                                                hasOverlay = hasOverlayPermission,
+                                                hasAudio = hasAudioPermission,
+                                                hasProjection = hasProjectionPermission,
+                                                isRunning = isServiceRunning,
+                                                onRequestOverlay = { requestOverlayPermission() },
+                                                onRequestAudio = { requestAudioPermission() },
+                                                onRequestProjection = { requestScreenCapture() },
+                                                onOpenAccessibility = { openAccessibilitySettings() },
+                                                onOpenAppDetails = { openAppDetailsSettings() },
+                                                onToggleService = { toggleService() }
+                                            )
+                                        }
+                                        AppTab.PORTFOLIO -> {
+                                            HistoryScreen()
+                                        }
+                                        AppTab.PROFILE -> {
+                                            DashboardScreen(
+                                                hasOverlay = hasOverlayPermission,
+                                                hasAudio = hasAudioPermission,
+                                                hasProjection = hasProjectionPermission,
+                                                isRunning = isServiceRunning,
+                                                onRequestOverlay = { requestOverlayPermission() },
+                                                onRequestAudio = { requestAudioPermission() },
+                                                onRequestProjection = { requestScreenCapture() },
+                                                onOpenAccessibility = { openAccessibilitySettings() },
+                                                onOpenAppDetails = { openAppDetailsSettings() },
+                                                onToggleService = { toggleService() }
+                                            )
+                                        }
                                     }
                                 }
                             }

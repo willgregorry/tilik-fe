@@ -38,9 +38,25 @@ import id.tilik.app.ui.theme.BrandPrimary
 import id.tilik.app.ui.theme.TextMuted
 import id.tilik.app.ui.theme.TextPrimary
 
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.PieChart
+import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PieChart
+import androidx.compose.ui.graphics.Color
+import id.tilik.app.ui.theme.AppAccent
+import id.tilik.app.ui.theme.AppGray
+
 enum class AppTab(val title: String, val activeIcon: ImageVector, val inactiveIcon: ImageVector) {
-    HOME("Beranda", Icons.Rounded.Home, Icons.Outlined.Home),
-    HISTORY("Riwayat", Icons.Rounded.History, Icons.Outlined.History)
+    HOME("Home", Icons.Rounded.Home, Icons.Outlined.Home),
+    MARKETS("Markets", Icons.Rounded.BarChart, Icons.Outlined.BarChart),
+    PORTFOLIO("Portofolio", Icons.Rounded.PieChart, Icons.Outlined.PieChart),
+    PROFILE("Profile", Icons.Rounded.Person, Icons.Outlined.Person);
+
+    companion object {
+        val HISTORY = PORTFOLIO
+    }
 }
 
 @Composable
@@ -51,14 +67,14 @@ fun AppBottomNav(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(AppSurface)
-            .border(width = 1.dp, color = AppBorder)
+            .background(Color(0xE60A0A0A))
+            .border(width = 1.dp, color = Color(0x14FFFFFF))
             .navigationBarsPadding()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -73,7 +89,7 @@ fun AppBottomNav(
                             interactionSource = interactionSource,
                             indication = null
                         ) { onTabSelected(tab) }
-                        .padding(horizontal = 24.dp, vertical = 6.dp),
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -82,15 +98,15 @@ fun AppBottomNav(
                         Icon(
                             imageVector = if (isSelected) tab.activeIcon else tab.inactiveIcon,
                             contentDescription = tab.title,
-                            tint = if (isSelected) BrandPrimary else TextMuted,
-                            modifier = Modifier.size(24.dp)
+                            tint = if (isSelected) AppAccent else AppGray,
+                            modifier = Modifier.size(22.dp)
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = tab.title,
-                            color = if (isSelected) BrandPrimary else TextMuted,
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            color = if (isSelected) AppAccent else AppGray,
+                            fontSize = 10.sp,
+                            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
                         )
                     }
                 }

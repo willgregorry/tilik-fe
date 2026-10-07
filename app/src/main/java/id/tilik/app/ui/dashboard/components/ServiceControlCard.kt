@@ -44,9 +44,9 @@ fun ServiceControlCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, AppBorder, RoundedCornerShape(14.dp)),
+            .border(1.dp, Color(0x14FFFFFF), RoundedCornerShape(20.dp)),
         colors = CardDefaults.cardColors(containerColor = AppSurface),
-        shape = RoundedCornerShape(14.dp)
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             // Header: Status Badge & Label
@@ -56,7 +56,7 @@ fun ServiceControlCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "LAYANAN MELAYANG",
+                    text = "STATUS WIDGET",
                     color = id.tilik.app.ui.theme.TextMuted,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -72,7 +72,7 @@ fun ServiceControlCard(
             Spacer(modifier = Modifier.height(10.dp))
 
             Text(
-                text = if (isRunning) "Widget Tilik sedang melayang" else "Mulai pemeriksaan melayang",
+                text = if (isRunning) "Widget Tilik Melayang" else "Layanan Tilik Siap",
                 color = TextPrimary,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold
@@ -82,9 +82,9 @@ fun ServiceControlCard(
 
             Text(
                 text = if (isRunning)
-                    "Buka Threads atau WhatsApp. Salin teks klaim saham untuk memverifikasi data pasar langsung."
+                    "Melayang di atas aplikasi lain · Siap verifikasi klaim pasar"
                 else
-                    "Aktifkan bubble melayang untuk memeriksa klaim finfluencer instan di atas aplikasi lain.",
+                    "Aktifkan widget untuk fact-check klaim saham BEI seketika",
                 color = TextSecondary,
                 fontSize = 13.sp,
                 lineHeight = 18.sp
@@ -98,7 +98,7 @@ fun ServiceControlCard(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isRunning) StatusDanger else BrandPrimary
                 ),
-                shape = RoundedCornerShape(10.dp),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(46.dp)
