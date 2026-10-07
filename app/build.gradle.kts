@@ -43,7 +43,7 @@ android {
                 ?: defaultValue
         }
 
-        val envBaseUrl = loadConfigValue("TILIK_BASE_URL", "http://localhost:8000/")
+        val envBaseUrl = loadConfigValue("TILIK_BASE_URL", "https://6rlfv87r-8000.asse.devtunnels.ms/")
         val envSectorsKey = loadConfigValue("SECTORS_API_KEY", "")
         val envGeminiKey = loadConfigValue("GEMINI_API_KEY", "")
 

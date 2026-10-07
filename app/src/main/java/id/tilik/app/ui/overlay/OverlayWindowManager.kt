@@ -78,6 +78,7 @@ class OverlayWindowManager(
 
     private var isTucked by mutableStateOf(false)
     private var isDockedOnLeft by mutableStateOf(false)
+    private var isDragging = false
     private val idleHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val IDLE_TIMEOUT_MS = 3000L
     private var tuckAnimator: ValueAnimator? = null
@@ -90,8 +91,8 @@ class OverlayWindowManager(
     private var lastBubbleY = 450
 
     private val tuckRunnable = Runnable {
-        Timber.tag("TILIK_MONITOR").i("⏳ [TUCK TIMER FIRED] Inactivity 3 detik terdeteksi. currentState=$currentState, isTucked=$isTucked")
-        if (currentState == OverlayState.IDLE && !isTucked) {
+        Timber.tag("TILIK_MONITOR").i("⏳ [TUCK TIMER FIRED] Inactivity 3 detik terdeteksi. currentState=$currentState, isTucked=$isTucked, isDragging=$isDragging")
+        if (currentState == OverlayState.IDLE && !isTucked && !isDragging) {
             if (detectedTicker != null) {
                 detectedTicker = null
             }
@@ -101,8 +102,8 @@ class OverlayWindowManager(
 
     private fun resetIdleTimer() {
         idleHandler.removeCallbacks(tuckRunnable)
-        Timber.tag("TILIK_MONITOR").i("⏱️ [RESET IDLE TIMER] currentState=$currentState, detectedTicker=$detectedTicker")
-        if (currentState == OverlayState.IDLE) {
+        Timber.tag("TILIK_MONITOR").i("⏱️ [RESET IDLE TIMER] currentState=$currentState, detectedTicker=$detectedTicker, isDragging=$isDragging")
+        if (currentState == OverlayState.IDLE && !isDragging) {
             idleHandler.postDelayed(tuckRunnable, IDLE_TIMEOUT_MS)
         }
     }
@@ -207,6 +208,9 @@ class OverlayWindowManager(
             }
 
             addOnLayoutChangeListener { v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                if (isDragging || snapAnimator?.isRunning == true || tuckAnimator?.isRunning == true) {
+                    return@addOnLayoutChangeListener
+                }
                 val newWidth = right - left
                 val oldWidth = oldRight - oldLeft
 
@@ -392,7 +396,7 @@ class OverlayWindowManager(
     private fun tuckBubbleIntoEdge() {
         val view = composeView ?: return
         val params = layoutParams ?: return
-        if (currentState != OverlayState.IDLE || isTucked) return
+        if (currentState != OverlayState.IDLE || isTucked || isDragging) return
 
         val metrics = context.resources.displayMetrics
         val screenWidth = metrics.widthPixels
@@ -409,13 +413,13 @@ class OverlayWindowManager(
         isTucked = true
         tuckAnimator?.cancel()
         tuckAnimator = ValueAnimator.ofInt(params.x, targetX).apply {
-            duration = 320L
+            duration = 300L
             interpolator = DecelerateInterpolator(1.5f)
             addUpdateListener { animation ->
                 val x = animation.animatedValue as Int
                 params.x = x
                 try {
-                    if (composeView != null && currentState == OverlayState.IDLE) {
+                    if (composeView != null && currentState == OverlayState.IDLE && !isDragging) {
                         windowManager.updateViewLayout(view, params)
                     }
                 } catch (_: Exception) {}
@@ -447,14 +451,14 @@ class OverlayWindowManager(
         tuckAnimator?.cancel()
         if (wasTucked && animate) {
             tuckAnimator = ValueAnimator.ofInt(params.x, normalX).apply {
-                duration = 220L
+                duration = 200L
                 interpolator = DecelerateInterpolator(1.5f)
                 addUpdateListener { animation ->
                     val x = animation.animatedValue as Int
                     params.x = x
                     lastBubbleX = x
                     try {
-                        if (composeView != null && currentState == OverlayState.IDLE) {
+                        if (composeView != null && currentState == OverlayState.IDLE && !isDragging) {
                             windowManager.updateViewLayout(view, params)
                         }
                     } catch (_: Exception) {}
@@ -476,7 +480,8 @@ class OverlayWindowManager(
     private fun snapBubbleToEdge(view: View, params: WindowManager.LayoutParams) {
         val metrics = context.resources.displayMetrics
         val screenWidth = metrics.widthPixels
-        val viewW = if (view.width > 0) view.width else (56 * metrics.density).toInt()
+        val defaultBubbleW = (56 * metrics.density).toInt()
+        val viewW = if (view.width in 1 until screenWidth) view.width else defaultBubbleW
         val marginPx = (8 * metrics.density).toInt().coerceAtLeast(16)
 
         // Titik tengah horizontal bubble saat ini
@@ -499,18 +504,17 @@ class OverlayWindowManager(
         isTucked = false
         snapAnimator?.cancel()
         snapAnimator = ValueAnimator.ofInt(params.x, targetX).apply {
-            duration = 260L
+            duration = 240L
             interpolator = DecelerateInterpolator(1.6f)
             addUpdateListener { animation ->
                 val newX = animation.animatedValue as Int
                 params.x = newX
                 lastBubbleX = newX
                 try {
-                    if (composeView != null && currentState == OverlayState.IDLE) {
+                    if (composeView != null && currentState == OverlayState.IDLE && !isDragging) {
                         windowManager.updateViewLayout(view, params)
                     }
-                } catch (_: Exception) {
-                }
+                } catch (_: Exception) {}
             }
             start()
         }
@@ -529,7 +533,6 @@ class OverlayWindowManager(
         var initialY = 0
         var initialTouchX = 0f
         var initialTouchY = 0f
-        var isDragging = false
         var touchStartTime = 0L
 
         view.setOnTouchListener { _, event ->
@@ -545,7 +548,12 @@ class OverlayWindowManager(
                 return@setOnTouchListener false
             }
 
-            Timber.tag("TILIK_MONITOR").i("👇 [TOUCH EVENT] action=${event.actionMasked}, rawX=${event.rawX}, rawY=${event.rawY}, isTucked=$isTucked")
+            val metrics = context.resources.displayMetrics
+            val screenW = metrics.widthPixels
+            val screenH = metrics.heightPixels
+            val defaultBubbleW = (56 * metrics.density).toInt()
+            val viewW = if (view.width in 1 until screenW) view.width else defaultBubbleW
+            val marginPx = (8 * metrics.density).toInt().coerceAtLeast(16)
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
@@ -553,6 +561,18 @@ class OverlayWindowManager(
                     snapAnimator?.cancel()
                     tuckAnimator?.cancel()
                     view.parent?.requestDisallowInterceptTouchEvent(true)
+
+                    // Jika sedang tucked, kembalikan seketika ke pinggir layar agar koordinat x valid sebelum di-drag
+                    if (isTucked) {
+                        isTucked = false
+                        val normalX = if (isDockedOnLeft) marginPx else screenW - viewW - marginPx
+                        params.x = normalX
+                        lastBubbleX = normalX
+                        try {
+                            windowManager.updateViewLayout(view, params)
+                        } catch (_: Exception) {}
+                    }
+
                     initialX = params.x
                     initialY = params.y
                     initialTouchX = event.rawX
@@ -566,7 +586,7 @@ class OverlayWindowManager(
                     val deltaY = (event.rawY - initialTouchY).toInt()
                     val moveDistance = kotlin.math.hypot(deltaX.toDouble(), deltaY.toDouble())
 
-                    // Threshold 8px agar langsung responsif begitu jari mulai bergeser
+                    // Threshold 8px agar responsif seketika begitu jari mulai bergeser
                     if (!isDragging && moveDistance > 8) {
                         isDragging = true
                         cancelIdleTimer()
@@ -576,23 +596,17 @@ class OverlayWindowManager(
                     }
 
                     if (isDragging) {
-                        val metrics = context.resources.displayMetrics
-                        val curWidth = metrics.widthPixels
-                        val curHeight = metrics.heightPixels
-                        val viewW = if (view.width > 0) view.width else (56 * metrics.density).toInt()
-                        val viewH = if (view.height > 0) view.height else (56 * metrics.density).toInt()
                         val safeMarginX = (4 * metrics.density).toInt().coerceAtLeast(8)
-                        val safeMarginTop = (48 * metrics.density).toInt().coerceAtLeast(90)
-                        val safeMarginBottom = (48 * metrics.density).toInt().coerceAtLeast(90)
+                        val safeMarginTop = (40 * metrics.density).toInt().coerceAtLeast(60)
+                        val safeMarginBottom = (40 * metrics.density).toInt().coerceAtLeast(60)
 
-                        params.x = (initialX + deltaX).coerceIn(safeMarginX, curWidth - viewW - safeMarginX)
-                        params.y = (initialY + deltaY).coerceIn(safeMarginTop, curHeight - viewH - safeMarginBottom)
+                        params.x = (initialX + deltaX).coerceIn(safeMarginX, screenW - viewW - safeMarginX)
+                        params.y = (initialY + deltaY).coerceIn(safeMarginTop, screenH - viewW - safeMarginBottom)
                         lastBubbleX = params.x
                         lastBubbleY = params.y
                         try {
                             windowManager.updateViewLayout(view, params)
-                        } catch (_: Exception) {
-                        }
+                        } catch (_: Exception) {}
                     }
                     true
                 }
@@ -602,8 +616,8 @@ class OverlayWindowManager(
                     val totalDeltaY = event.rawY - initialTouchY
                     val totalDistance = kotlin.math.hypot(totalDeltaX.toDouble(), totalDeltaY.toDouble())
 
-                    // Hanya anggap sebagai tap/klik jika jari tidak bergeser (>16px) dan durasi wajar (<380ms)
-                    if (!isDragging && totalDistance < 16 && touchDuration < 380) {
+                    // Hanya anggap sebagai tap/klik jika jari tidak bergeser (>14px) dan durasi wajar (<350ms)
+                    if (!isDragging && totalDistance < 14 && touchDuration < 350) {
                         cancelIdleTimer()
                         untuckBubble(animate = false)
                         onBubbleClicked()
