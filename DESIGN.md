@@ -45,19 +45,20 @@ Semua token warna didefinisikan secara sentral di `id.tilik.app.ui.theme.Theme.k
 
 ### A. Top Bar (Header Investor)
 - **Komponen:** `AppTopBar.kt`
-- **Sisi Kiri:** Avatar lingkaran (44dp) dengan border tipis + Teks "Hi, Good morning" (13sp gray) & Nama "Matthew" / Investor (17sp white).
-- **Sisi Kanan:** Tombol lingkaran notifikasi (44dp, `#141414`) dengan titik merah (`#EF4444`) berstatus unread. Mengetuk tombol ini langsung membuka layar *Notifications*.
+- **Sisi Kiri:** Avatar lingkaran (44dp) foto profil akun Google (atau fallback favicon putih) + Teks "Hi, Good morning" (13sp gray) & Nama User/Investor dinamis (17sp white).
+- **Sisi Kanan:** Tombol lingkaran riwayat notifikasi (44dp, `#141414`) membuka riwayat verifikasi fakta.
 
 ### B. Total Balance Hero Section
 - **Komponen:** `BalanceSection.kt`
-- Label: `Total Balance` dilengkapi ikon panah bolak-balik (`CompareArrows`).
-- Angka: `$ 138,248.58` (38sp bold) dengan ikon mata untuk menyembunyikan/menampilkan saldo.
+- Label: `Total Saldo Portofolio` dilengkapi ikon panah bolak-balik (`CompareArrows`).
+- Angka: Dinamis / placeholder minimalis `-` (38sp bold) dengan ikon mata untuk menyembunyikan/menampilkan saldo (zero mock data).
 - Tombol Aksi Kanan: Tombol bulat putih kontras tinggi (50dp, `Color.White`) dengan ikon hitam untuk memulai/menghentikan layanan Tilik secara instan.
-- Trend Pill Badge: Pill hijau lengkung penuh (`percent = 50`) menampilkan `+16.2% · In this past month / Layanan Tilik Aktif`.
+- Trend Pill Badge: Pill hijau lengkung penuh (`percent = 50`) menampilkan status layanan Tilik Aktif / Standby.
 
 ### C. My Portfolio Horizontal Cards
 - **Komponen:** `PortfolioCarousel.kt`
-- Judul seksi: "My Portofolio" + "View Details >".
+- Judul seksi: "Portofolio Saham" + "Lihat Detail >".
+- Slot dinamis / `-` ("Belum ada portofolio terhubung") jika belum ada data emiten riil.
 - Kartu horizontal (172dp x 160dp, `RoundedCornerShape(24.dp)`, `#141414`):
   - Ticker & nama perusahaan di kiri atas, ikon lingkaran emiten di kanan atas.
   - Harga saham (18sp bold) & persentase naik/turun di kiri bawah.

@@ -2,6 +2,7 @@ package id.tilik.app.data.client
 
 import id.tilik.app.BuildConfig
 import id.tilik.app.data.api.TilikApiService
+import id.tilik.app.data.session.SessionManager
 import kotlinx.serialization.json.Json
 import okhttp3.ConnectionPool
 import okhttp3.MediaType.Companion.toMediaType
@@ -33,14 +34,31 @@ object ApiClientProvider {
     private val authInterceptor = okhttp3.Interceptor { chain ->
         val original = chain.request()
         val requestBuilder = original.newBuilder()
-        if (BuildConfig.SECTORS_API_KEY.isNotBlank()) {
+
+        val token = SessionManager.getAccessToken()
+        if (!token.isNullOrBlank()) {
+            requestBuilder.header("Authorization", "Bearer $token")
+        } else if (BuildConfig.SECTORS_API_KEY.isNotBlank()) {
             requestBuilder.header("Authorization", BuildConfig.SECTORS_API_KEY)
+        }
+
+        if (BuildConfig.SECTORS_API_KEY.isNotBlank()) {
             requestBuilder.header("X-API-KEY", BuildConfig.SECTORS_API_KEY)
         }
         chain.proceed(requestBuilder.build())
     }
 
     private val okHttpClient = OkHttpClient.Builder()
+        .dns(object : okhttp3.Dns {
+            override fun lookup(hostname: String): List<java.net.InetAddress> {
+                if (hostname.equals("localhost", ignoreCase = true)) {
+                    return listOf(
+                        java.net.InetAddress.getByAddress("localhost", byteArrayOf(127, 0, 0, 1))
+                    )
+                }
+                return okhttp3.Dns.SYSTEM.lookup(hostname)
+            }
+        })
         .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(45, TimeUnit.SECONDS)

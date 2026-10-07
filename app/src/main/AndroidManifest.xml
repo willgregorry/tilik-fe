@@ -35,6 +35,7 @@
             android:name=".service.OverlayService"
             android:enabled="true"
             android:exported="false"
+            android:stopWithTask="true"
             android:foregroundServiceType="specialUse|mediaProjection|microphone">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"

@@ -19,21 +19,35 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import id.tilik.app.data.repository.AuthRepository
+import id.tilik.app.data.session.SessionManager
 import id.tilik.app.service.OverlayService
+import id.tilik.app.ui.auth.AuthScreen
+import id.tilik.app.ui.auth.RoleSelectionScreen
 import id.tilik.app.ui.components.AppBottomNav
 import id.tilik.app.ui.components.AppTab
 import id.tilik.app.ui.components.AppTopBar
 import id.tilik.app.ui.dashboard.DashboardScreen
 import id.tilik.app.ui.history.HistoryScreen
+import id.tilik.app.ui.markets.MarketsScreen
+import id.tilik.app.ui.settings.ProfileDetailScreen
+import id.tilik.app.ui.settings.SettingsScreen
 import id.tilik.app.ui.splash.SplashScreen
 import id.tilik.app.ui.theme.AppBackground
 import id.tilik.app.ui.theme.TilikTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -54,6 +68,54 @@ class MainActivity : ComponentActivity() {
         if (result.resultCode == RESULT_OK && result.data != null) {
             hasProjectionPermission = true
             sendProjectionTokenToService(result.resultCode, result.data!!)
+        }
+    }
+
+    private var isAuthLoading by mutableStateOf(false)
+    private var authErrorMessage by mutableStateOf<String?>(null)
+
+    private val googleSignInClient by lazy {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(BuildConfig.GOOGLE_WEB_CLIENT_ID)
+            .requestEmail()
+            .build()
+        GoogleSignIn.getClient(this, gso)
+    }
+
+    private val googleSignInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            val idToken = account?.idToken
+            if (!idToken.isNullOrBlank()) {
+                handleGoogleIdToken(idToken)
+            } else {
+                authErrorMessage = "Gagal menghubungkan ke Google. Coba lagi."
+                isAuthLoading = false
+            }
+        } catch (_: Exception) {
+            authErrorMessage = "Gagal menghubungkan ke Google. Coba lagi."
+            isAuthLoading = false
+        }
+    }
+
+    private fun startGoogleSignIn() {
+        authErrorMessage = null
+        isAuthLoading = true
+        googleSignInLauncher.launch(googleSignInClient.signInIntent)
+    }
+
+    private fun handleGoogleIdToken(idToken: String) {
+        lifecycleScope.launch {
+            val res = AuthRepository.loginWithGoogle(idToken)
+            isAuthLoading = false
+            if (res.isSuccess) {
+                authErrorMessage = null
+            } else {
+                authErrorMessage = "Gagal menghubungkan ke server Tilik AI. Coba lagi."
+            }
         }
     }
 
@@ -89,17 +151,52 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     } else {
+                        val isLoggedIn by SessionManager.isLoggedInState.collectAsState()
+                        val isRoleOnboardingDone by SessionManager.isRoleOnboardingDoneState.collectAsState()
+                        val currentUser by SessionManager.currentUserState.collectAsState()
+
                         var currentTab by remember { mutableStateOf(AppTab.HOME) }
                         var isNotificationsScreenVisible by remember { mutableStateOf(false) }
+                        var isProfileDetailVisible by remember { mutableStateOf(false) }
+                        var selectedMarketStock by remember { mutableStateOf<String?>(null) }
+                        var selectedHistoryId by remember { mutableStateOf<String?>(null) }
 
-                        if (isNotificationsScreenVisible) {
+                        if (!isLoggedIn) {
+                            AuthScreen(
+                                isLoading = isAuthLoading,
+                                errorMessage = authErrorMessage,
+                                onGoogleSignInClick = { startGoogleSignIn() }
+                            )
+                        } else if (!isRoleOnboardingDone) {
+                            RoleSelectionScreen(
+                                initialRole = SessionManager.getUserRole(),
+                                onRoleConfirmed = {
+                                    // SessionManager.updateRole() updates isRoleOnboardingDoneState to true
+                                }
+                            )
+                        } else if (isProfileDetailVisible) {
+                            ProfileDetailScreen(
+                                onBackClick = { isProfileDetailVisible = false },
+                                onLogoutClick = {
+                                    isProfileDetailVisible = false
+                                    googleSignInClient.signOut()
+                                    SessionManager.clearSession()
+                                }
+                            )
+                        } else if (isNotificationsScreenVisible) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .background(AppBackground)
                             ) {
                                 HistoryScreen(
-                                    onBackClick = { isNotificationsScreenVisible = false }
+                                    onBackClick = { isNotificationsScreenVisible = false },
+                                    onItemClick = { histId, ticker ->
+                                        selectedHistoryId = histId
+                                        if (ticker != null) selectedMarketStock = ticker
+                                        isNotificationsScreenVisible = false
+                                        currentTab = AppTab.MARKETS
+                                    }
                                 )
                             }
                         } else {
@@ -108,12 +205,14 @@ class MainActivity : ComponentActivity() {
                                 topBar = {
                                     AppTopBar(
                                         onProfileClick = {
-                                            openAppDetailsSettings()
+                                            isProfileDetailVisible = true
                                         },
                                         onNotificationClick = {
                                             isNotificationsScreenVisible = true
                                         },
-                                        hasUnreadNotification = true
+                                        hasUnreadNotification = false,
+                                        userName = currentUser?.name?.takeIf { it.isNotBlank() } ?: "User",
+                                        userAvatarUrl = currentUser?.picture
                                     )
                                 },
                                 bottomBar = {
@@ -133,6 +232,40 @@ class MainActivity : ComponentActivity() {
                                     when (currentTab) {
                                         AppTab.HOME -> {
                                             DashboardScreen(
+                                                isRunning = isServiceRunning,
+                                                onToggleService = { toggleService() },
+                                                onNavigateToDetails = {
+                                                    selectedMarketStock = null
+                                                    selectedHistoryId = null
+                                                    currentTab = AppTab.MARKETS
+                                                },
+                                                onNavigateToStock = { ticker ->
+                                                    selectedMarketStock = ticker
+                                                    selectedHistoryId = null
+                                                    currentTab = AppTab.MARKETS
+                                                }
+                                            )
+                                        }
+                                        AppTab.MARKETS -> {
+                                            MarketsScreen(
+                                                historyId = selectedHistoryId,
+                                                initialTicker = selectedMarketStock,
+                                                onBackClick = {
+                                                    selectedHistoryId = null
+                                                }
+                                            )
+                                        }
+                                        AppTab.HISTORY -> {
+                                            HistoryScreen(
+                                                onItemClick = { histId, ticker ->
+                                                    selectedHistoryId = histId
+                                                    if (ticker != null) selectedMarketStock = ticker
+                                                    currentTab = AppTab.MARKETS
+                                                }
+                                            )
+                                        }
+                                        AppTab.SETTINGS -> {
+                                            SettingsScreen(
                                                 hasOverlay = hasOverlayPermission,
                                                 hasAudio = hasAudioPermission,
                                                 hasProjection = hasProjectionPermission,
@@ -143,38 +276,11 @@ class MainActivity : ComponentActivity() {
                                                 onOpenAccessibility = { openAccessibilitySettings() },
                                                 onOpenAppDetails = { openAppDetailsSettings() },
                                                 onToggleService = { toggleService() },
-                                                onNavigateToDetails = { currentTab = AppTab.PORTFOLIO }
-                                            )
-                                        }
-                                        AppTab.MARKETS -> {
-                                            DashboardScreen(
-                                                hasOverlay = hasOverlayPermission,
-                                                hasAudio = hasAudioPermission,
-                                                hasProjection = hasProjectionPermission,
-                                                isRunning = isServiceRunning,
-                                                onRequestOverlay = { requestOverlayPermission() },
-                                                onRequestAudio = { requestAudioPermission() },
-                                                onRequestProjection = { requestScreenCapture() },
-                                                onOpenAccessibility = { openAccessibilitySettings() },
-                                                onOpenAppDetails = { openAppDetailsSettings() },
-                                                onToggleService = { toggleService() }
-                                            )
-                                        }
-                                        AppTab.PORTFOLIO -> {
-                                            HistoryScreen()
-                                        }
-                                        AppTab.PROFILE -> {
-                                            DashboardScreen(
-                                                hasOverlay = hasOverlayPermission,
-                                                hasAudio = hasAudioPermission,
-                                                hasProjection = hasProjectionPermission,
-                                                isRunning = isServiceRunning,
-                                                onRequestOverlay = { requestOverlayPermission() },
-                                                onRequestAudio = { requestAudioPermission() },
-                                                onRequestProjection = { requestScreenCapture() },
-                                                onOpenAccessibility = { openAccessibilitySettings() },
-                                                onOpenAppDetails = { openAppDetailsSettings() },
-                                                onToggleService = { toggleService() }
+                                                onOpenProfileDetail = { isProfileDetailVisible = true },
+                                                onOpenAuth = {
+                                                    googleSignInClient.signOut()
+                                                    SessionManager.clearSession()
+                                                }
                                             )
                                         }
                                     }

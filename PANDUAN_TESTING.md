@@ -277,3 +277,199 @@ Skenario ini memverifikasi bahwa seluruh data bursa di Bottom Sheet hasil tampil
    - Gulir (*scroll*) konten sheet hingga ke bagian paling bawah.
    - **Hasil yang Diharapkan:**
      - Teks disclaimer (*"Data bersumber dari Sectors Financial API..."*) terlihat seutuhnya di atas tombol *"Tutup"* tanpa tertutup atau terpotong sebagian.
+
+---
+
+### Skenario 15: Uji Snap-to-Edge (50% Layar), Anti-Overflow Layar, & Favicon Idle Tuck
+Skenario ini memverifikasi fisika floating bubble sesuai permintaan terbaru:
+1. **Uji Drag & Snap ke Tepi Terdekat (50% Layar):**
+   - Sentuh dan geser floating bubble ke area kiri layar (< 50% lebar layar), lalu lepaskan jari.
+     - **Hasil yang Diharapkan:** Bubble otomatis meluncur dan menempel (*snap*) ke **tepi kiri layar**.
+   - Geser floating bubble ke area kanan layar (>= 50% lebar layar), lalu lepaskan jari.
+     - **Hasil yang Diharapkan:** Bubble otomatis meluncur dan menempel (*snap*) ke **tepi kanan layar**.
+2. **Uji Anti-Overflow Batas Layar:**
+   - Geser bubble sejauh mungkin ke ujung kiri, kanan, atas, maupun bawah layar.
+     - **Hasil yang Diharapkan:**
+       - Bubble **TIDAK BISA** tembus atau keluar batas layar sama sekali (*zero overflow*).
+       - Sisi kanan dan kiri selalu terkunci rapi di dalam batas layar.
+       - Sisi atas tidak menabrak jam/status bar, dan sisi bawah tidak menabrak gesture navigation bar.
+3. **Uji Favicon Idle Tuck (Tanpa Ikon Panah/Arrow):**
+   - Lepaskan bubble dan biarkan menganggur (*idle*) selama 3 detik tanpa disentuh.
+     - **Hasil yang Diharapkan:**
+       - **TIDAK ADA** ikon panah (`>` / `<`). Ikon tetap menampilkan **Favicon Tilik** resmi.
+       - Bubble mengecil halus (skala ~72%, ukuran favicon 30dp) dan meredup transparan (opacity ~38%).
+       - Bubble merapat rapi ke samping (*tucked into side edge*).
+4. **Uji Instan Wake-Up:**
+   - Sentuh kembali bubble yang sedang tucked.
+     - **Hasil yang Diharapkan:** Bubble seketika bangun (*wake up*) ke ukuran penuh 100% dan opacity 1.0f, siap digunakan atau digeser kembali.
+
+---
+
+### Skenario 16: Uji Skeleton Shimmer Loading & Fallback "-" (Zero-Mock Data)
+Skenario ini memverifikasi bahwa semua data pura-pura/mock palsu (seperti "Tarik napas 5 detik!", fake PE/PBV, angka portofolio fiktif) telah dibersihkan secara total dan digantikan oleh animasi Skeleton/Shimmer serta placeholder `"-"` (yang nantinya siap disambungkan ke animasi Lottie):
+1. **Uji Loading Skeleton / Shimmer:**
+   - Pada saat membuka aplikasi atau ketika data portofolio, watchlist, dan riwayat sedang dimuat:
+     - **Hasil yang Diharapkan:** Komponen menampilkan efek animasi berkilau (*shimmer animation*) bernuansa AMOLED (`AppCard` dengan gradient sweep lembut), bukan blank putih atau teks kosong patah-patah.
+2. **Uji Penanganan Request Gagal / Offline (Placeholder "-"):**
+   - Matikan koneksi internet atau jalankan verifikasi klaim ketika backend service tidak dapat dihubungi.
+   - Buka sheet hasil vonis atau periksa response verifikasi.
+   - **Hasil yang Diharapkan:**
+     - **TIDAK ADA LAGI** teks buatan palsu seperti *"Tarik napas 5 detik! Yakin membeli karena analisa..."*.
+     - **TIDAK ADA LAGI** data saham fiktif seperti PE/PBV palsu atau broker fiktif.
+     - Kotak indikator menampilkan status `"-"` yang bersih dan minimalis (sebagai penanda slot yang nantinya akan disambungkan ke animasi Lottie).
+     - Angka pertumbuhan laba dan valuasi menampilkan `"-"` jika data belum tersedia atau gagal diambil.
+
+
+
+---
+
+### Skenario 17: Uji Integrasi Backend API (Google Auth, Role Onboarding, History & Markets Detail)
+Skenario ini memverifikasi integrasi penuh endpoint backend OpenAPI v2.0.0 (https://6rlfv87r-8000.asse.devtunnels.ms/):
+
+1. **Uji Masuk dengan Google (Google Sign-In Single-Button):**
+   - Buka tab **Profile** atau buka app saat sesi belum terautentikasi (atau logout dari Settings).
+   - Tekan tombol **"Lanjutkan dengan Google"**.
+   - Pilih akun Google Anda pada Google Account Picker native Android.
+   - **Hasil yang Diharapkan:**
+     - Aplikasi menukar ID Token Google ke backend via `POST /api/v1/auth/google`.
+     - Access token JWT dan profil pengguna (nama, email, avatar foto profil) tersimpan aman di `SessionManager`.
+     - Tidak ada form email/password lokal yang ditampilkan (sesuai spesifikasi zero local auth).
+
+2. **Uji Pemilihan Profil & Role Onboarding (Pemula vs Expert):**
+   - Setelah login pertama kali, layar akan membuka **RoleSelectionScreen** ("Pilih Profil Analisis Saham").
+   - Terdapat 2 kartu interaktif bergaya dark fintech:
+     - **Investor Pemula (Retail Beginner)**: Penjelasan sederhana, sinyal praktis & bahasa awam.
+     - **Trader & Analis Expert**: Valuasi PE/PBV mendalam, broker summary & metriks keuangan detail.
+   - Tekan salah satu kartu dan ketuk **"Simpan & Lanjutkan"**.
+   - **Hasil yang Diharapkan:**
+     - Role tersimpan ke backend via `PUT /api/v1/user/settings` (`{"user_role": "PEMULA"}` atau `{"user_role": "EXPERT"}`).
+     - Dashboard utama terbuka seketika dengan badge status role yang sesuai.
+
+3. **Uji Ganti Role Kapan Saja di Menu Profil:**
+   - Masuk ke tab **Pengaturan** -> ketuk kartu profil akun Anda untuk membuka **ProfileDetailScreen**.
+   - Anda dapat beralih antara role **Pemula** dan **Expert** secara langsung.
+   - **Hasil yang Diharapkan:**
+     - Role baru otomatis dikirim ke backend `PUT /api/v1/user/settings` dan tersinkronisasi secara instan.
+
+4. **Uji Riwayat Verifikasi (History API):**
+   - Buka tab **Riwayat** (ikon jam/history pada bottom navigation dock).
+   - Sistem akan memanggil `GET /api/v1/history`.
+   - **Hasil yang Diharapkan:**
+     - Menampilkan daftar klaim yang pernah diverifikasi oleh akun Anda.
+     - Jarak antar kartu lega dan rapi (14.dp) dengan badge status vonis: Sesuai Fakta (Hijau), Perlu Waspada (Kuning), atau Klaim Beresiko / Hoax (Merah).
+     - Terdapat filter tab kategori di bagian atas ("Semua", "Sesuai Fakta", "Waspada", "Hoax").
+
+5. **Uji Detail Forensik Saham (Markets Tab / History Detail):**
+   - Pada tab **Riwayat**, ketuk salah satu kartu riwayat verifikasi.
+   - Aplikasi akan mengarahkan ke tab **Detail Forensik (Markets)** dan memanggil `GET /api/v1/history/{history_id}`.
+   - **Hasil yang Diharapkan:**
+     - Header menampilkan emiten, nama perusahaan, score keyakinan, dan badge vonis.
+     - Kartu teks klaim menampilkan teks asli klaim yang ditelusuri.
+     - Rekomendasi analis cooling-off prompt tampil rapi.
+     - Valuasi Fundamental Sectors (P/E Ratio & PBV Ratio) tampil dinamis.
+     - Arus Modal Asing (Broker Flow) menampilkan net flow IDR, Top Foreign Buyers, dan Top Foreign Sellers tanpa data tiruan/mock fiktif.
+
+6. **Uji Bersihkan Riwayat:**
+   - Masuk ke tab **Pengaturan** -> ketuk **"Bersihkan Cache & Riwayat"**.
+   - **Hasil yang Diharapkan:**
+     - Aplikasi memanggil `DELETE /api/v1/history` dan mengosongkan riwayat lokal.
+
+---
+
+### Skenario 15: Uji Alur Wajib Login Google, Onboarding Role, dan Zero-Mock Data
+1. **Uji Pengalihan Wajib Login (Authentication Gate):**
+   - Buka aplikasi Tilik dalam kondisi belum login (atau setelah Logout).
+   - **Hasil yang Diharapkan:**
+     - Aplikasi langsung menampilkan **AuthScreen** (Lanjutkan dengan Google).
+     - Tombol "Mode Tamu" telah dihapus sepenuhnya sehingga tidak ada bypass.
+2. **Uji Login Sekali (Persistent Session):**
+   - Ketuk **"Lanjutkan dengan Google"** dan pilih akun Anda.
+   - **Hasil yang Diharapkan:**
+     - Jika akun telah memiliki role (`Pemula` atau `Pakar/Expert`), aplikasi langsung membuka **Dashboard**.
+     - Sesi tersimpan permanen di `SessionManager` sehingga saat aplikasi ditutup dan dibuka kembali, pengguna tetap berada di Dashboard tanpa perlu login berulang.
+3. **Uji Redirect Pemilihan Role (Bagi Akun Baru):**
+   - Jika akun belum memilih role:
+     - Aplikasi otomatis mengalihkan ke **RoleSelectionScreen** (Pemilihan Mode Investor).
+     - Pengguna memilih antara **Pemula** atau **Pakar (Expert)**.
+     - Ketuk **"Simpan & Lanjutkan"**.
+     - Aplikasi mengirim `PUT /api/v1/user/settings`, menyimpan role ke profil, lalu otomatis masuk ke **Beranda/Dashboard**.
+4. **Uji Verifikasi Zero-Mock & Dynamic User Data:**
+   - Nama default lama (seperti "Matthew" atau "Pengguna Tilik") sudah 100% diganti secara dinamis dengan nama akun Google pengguna atau fallback `"User"`.
+   - Avatar menampilkan foto profil akun Google dengan fallback favicon putih resmi.
+   - Tidak ada angka saldo palsu, tidak ada watchlist dummy, tidak ada kartu tren rumor fiktif, dan tidak ada hardcoded BBRI di tab Markets saat belum ada scan. Seluruh data kosong tampil sebagai `"-"` yang bersih dan siap dihubungkan ke API / animasi lottie.
+5. **Uji Haptic Feedback & Copywriting Error Baru:**
+   - Sentuh tombol **"Lanjutkan dengan Google"**.
+   - **Hasil yang Diharapkan:**
+     - Tombol menghasilkan getaran sentuhan taktil (*haptic feedback*) yang responsif.
+     - Jika pemilihan akun dibatalkan oleh pengguna, muncul pesan yang ramah: *"Gagal menghubungkan ke Google. Coba lagi."* tanpa kode teknis membingungkan.
+
+---
+
+### Skenario 18: Uji Desain Modern Floating Overlay & Toolbar Icon-Only (ClaimBottomSheet)
+Skenario ini memverifikasi refaktor antarmuka pengguna pada bottom sheet melayang (*floating overlay*) agar 100% konsisten dengan Dark Investment Design System di `DESIGN.md`:
+
+1. **Uji Tampilan Persistent Editor Card (Zero Mock Data):**
+   - Buka floating bottom sheet dengan mengetuk bubble Tilik saat tidak ada teks di clipboard.
+   - **Hasil yang Diharapkan:**
+     - Kotak editor klaim langsung tampil rapi secara permanen dengan placeholder *"Ketik atau salin klaim saham dari Threads/X di sini..."*.
+     - **TIDAK ADA LAGI** sample chips palsu/mock (*"BBRI Akumulasi Asing"*, *"GOTO Rekor Laba"*).
+     - Desain mengadopsi standar Fintech Dark Mode: Latar belakang `AppBg` (`#0A0A0A`), kartu `AppCard` (`#141414`), kontainer editor `AppCardSubtle` (`#1A1A1A`), dan hairline border `Color(0x14FFFFFF)`.
+
+2. **Uji Posisi Klaim Diskusi & Toolbar Icon-Only:**
+   - Perhatikan baris header di dalam kartu editor:
+     - **Sebelah Kiri (Badge Identitas):**
+       - Saat belum ada emiten terdeteksi: Menampilkan pill badge `💬 Klaim Diskusi` dengan ikon forum berwarna `AppAccent` (`#FF5C35`).
+       - Saat teks mengandung ticker saham (misal: "BBRI"): Badge otomatis bertransformasi menjadi pill hijau `📈 $BBRI` (`AppGreen`).
+     - **Sebelah Kanan (Aksi Toolbar Berupa Icon Saja):**
+       - Teks link panjang (*"Perluas"*, *"Segarkan"*, *"Hapus"*) telah digantikan sepenuhnya menjadi tombol squircle 32dp modern dengan ikon saja:
+         1. 🔄 **Segarkan (`Refresh`)**: Menarik teks clipboard terbaru seketika.
+         2. ⤢ **Perluas / Perkecil (`OpenInFull` / `CloseFullscreen`)**: Mengubah ukuran tinggi sheet secara dinamis.
+         3. 🗑️ **Hapus (`DeleteOutline`)**: Mengosongkan teks input, meredup jika kosong dan aktif berwarna merah (`AppRed`) jika ada teks.
+
+3. **Uji Sentuhan Taktil (Haptic Feedback) & CTA Button:**
+   - Sentuh masing-masing tombol ikon (Segarkan, Perluas, Hapus) dan tombol CTA **"Periksa Fakta di Sectors API"**.
+   - **Hasil yang Diharapkan:**
+     - Setiap interaksi tombol memicu getaran sentuhan taktil (*haptic feedback*) yang nyata dan responsif.
+     - Tombol CTA menyala terang dengan warna brand `AppAccent` (`#FF5C35`) saat ada teks, dan meredup rapi saat kosong.
+
+---
+
+### Skenario 19: Uji Hold-to-Paste (Pilih Semua, Salin, Potong, Tempel), Bubble Spinner Murni Tanpa Text, dan CTA Kembali ke Input Saat Hasil Gagal
+
+Skenario ini memverifikasi 3 fitur penting yang baru saja disempurnakan:
+1. **Hold & Selection Menu di Floating Textbox (Pilih Semua, Salin, Potong, Tempel ala Native Android):**
+   - Buka floating bottom sheet Tilik di atas aplikasi apa pun (WhatsApp/Threads/Chrome).
+   - **Uji Tahan (Long Press) Saat Kotak Kosong:**
+     - Pastikan ada teks yang sudah Anda salin di clipboard HP Anda.
+     - Tekan dan tahan (*hold*) di dalam kotak textbox input klaim.
+     - **Hasil yang Diharapkan:** Menu toolbar melayang ala native Android langsung muncul tepat di atas jari Anda menampilkan tombol **[ 📋 Tempel ]**. Ketuk "Tempel" dan teks akan langsung terisi dengan haptic feedback.
+   - **Uji Tahan & Seleksi Teks Saat Ada Tulisan:**
+     - Ketik atau isi teks beberapa kalimat di kotak input.
+     - Tekan dan tahan (*hold*) pada salah satu kata atau blok teks.
+     - **Hasil yang Diharapkan:** Menu toolbar melayang muncul menampilkan opsi lengkap:
+       - **Pilih Semua**: Memblokir seluruh teks di dalam kotak.
+       - **Salin**: Menyalin teks yang sedang diblok ke clipboard.
+       - **Potong**: Memotong teks yang diblok dan menyalinnya ke clipboard.
+       - **Tempel**: Menimpa atau menyisipkan teks dari clipboard di posisi kursor.
+
+2. **Bubble Loading Murni Tanpa Text ("Zero-Fluff Spinner Only"):**
+   - Masukkan klaim saham (misal: "BBRI akumulasi broker asing hari ini") lalu ketuk **"Periksa Fakta di Sectors API"**.
+   - **Hasil yang Diharapkan:**
+     - Bottom sheet tertutup dan bubble floating berubah ke mode loading verifikasi.
+     - **TIDAK ADA LAGI TEKS** *"Menilik bursa..."* atau copywriting panjang yang mengganggu.
+     - Bubble tampil berbentuk bulat minimalis 56dp dengan spinner `CircularProgressIndicator` oranye (`AppAccent`) yang berputar halus.
+
+3. **Avatar Gambar Role & CTA "Kembali" Saat Hasil Gagal / Error / Kosong:**
+   - Jika verifikasi gagal (misal koneksi terputus atau server mengembalikan status gagal):
+   - **Hasil yang Diharapkan:**
+     - **Gambar Role Pengguna:** Di bagian tengah kartu status gagal, bulatan minus (`-`) telah digantikan dengan **gambar avatar role pengguna**:
+       - Secara default (atau sebelum login): Menampilkan gambar **`PEMULA.jpg`** dengan badge `"Mode Investor: Pemula"`.
+       - Jika pengguna telah login dan memilih role **Pakar (Expert)**: Otomatis menampilkan gambar **`EXPERT.jpg`** dengan badge `"Mode Investor: Pakar"`.
+     - **Copywriting CTA Ringkas ("Kembali"):**
+       - Tulisan tombol CTA yang panjang (*"Kembali ke Input Klaim"*) telah disederhanakan menjadi **"Kembali"** lengkap dengan ikon panah kembali (`ArrowBack`).
+       - Begitu juga pada tombol aksi di bagian bawah sheet, tertulis rapi **"Kembali"**.
+     - Saat tombol **"Kembali"** ditekan, aplikasi floating langsung membuka kembali bottom sheet ke **halaman awal input klaim**.
+     - Teks klaim yang sebelumnya telah diketik **TIDAK HILANG** sehingga pengguna tidak perlu mengetik ulang dari awal.
+
+
+

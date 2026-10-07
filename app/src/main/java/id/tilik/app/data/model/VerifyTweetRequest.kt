@@ -8,5 +8,7 @@ data class VerifyTweetRequest(
     @SerialName("text")
     val text: String,
     @SerialName("source_platform")
-    val sourcePlatform: String? = "threads"
+    val sourcePlatform: String? = "threads",
+    @SerialName("user_role")
+    val userRole: UserRole? = null
 )

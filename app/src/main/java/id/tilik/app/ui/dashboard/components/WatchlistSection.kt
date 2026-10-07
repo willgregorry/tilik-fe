@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,6 +26,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import id.tilik.app.ui.components.SkeletonBox
+import id.tilik.app.ui.components.shimmerEffect
 import id.tilik.app.ui.theme.AppCard
 import id.tilik.app.ui.theme.AppGreen
 import id.tilik.app.ui.theme.AppRed
@@ -42,17 +45,11 @@ data class WatchlistItem(
 
 @Composable
 fun WatchlistSection(
+    isLoading: Boolean = false,
+    items: List<WatchlistItem> = emptyList(),
     onAddWatchlistClick: () -> Unit = {},
     onItemClick: (WatchlistItem) -> Unit = {}
 ) {
-    val watchlistItems = listOf(
-        WatchlistItem("BBRI", "Bank Rakyat Indonesia", "5,250", "+125 (+2.44%)", true),
-        WatchlistItem("BBCA", "Bank Central Asia", "10,400", "+150 (+1.46%)", true),
-        WatchlistItem("BMRI", "Bank Mandiri", "6,750", "+50 (+0.75%)", true),
-        WatchlistItem("TLKM", "Telkom Indonesia", "2,980", "-40 (-1.32%)", false),
-        WatchlistItem("GOTO", "GoTo Gojek Tokopedia", "68", "-2 (-2.86%)", false)
-    )
-
     Column(modifier = Modifier.fillMaxWidth()) {
         // Section Header
         Row(
@@ -63,7 +60,7 @@ fun WatchlistSection(
             verticalAlignment = Alignment.Bottom
         ) {
             Text(
-                text = "My Watchlist",
+                text = "Daftar Pantauan Saham",
                 color = TextMuted,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium
@@ -73,7 +70,7 @@ fun WatchlistSection(
                 modifier = Modifier.clickable { onAddWatchlistClick() }
             ) {
                 Text(
-                    text = "Add Watchlist",
+                    text = "Tambah Pantauan",
                     color = TextPrimary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Normal
@@ -88,14 +85,77 @@ fun WatchlistSection(
             }
         }
 
-        // List Items
-        Column(
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            modifier = Modifier.padding(top = 6.dp)
-        ) {
-            watchlistItems.forEach { item ->
-                WatchlistRow(item = item, onClick = { onItemClick(item) })
+        // List Items / Skeletons
+        if (isLoading) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.padding(top = 6.dp)
+            ) {
+                repeat(4) {
+                    WatchlistSkeletonRow()
+                }
             }
+        } else if (items.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(110.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(AppCard)
+                    .border(1.dp, Color(0x14FFFFFF), RoundedCornerShape(16.dp))
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "-",
+                        color = TextPrimary,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Belum ada emiten di pantauan",
+                        color = TextMuted,
+                        fontSize = 13.sp
+                    )
+                }
+            }
+        } else {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.padding(top = 6.dp)
+            ) {
+                items.forEach { item ->
+                    WatchlistRow(item = item, onClick = { onItemClick(item) })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WatchlistSkeletonRow() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SkeletonBox(modifier = Modifier.size(44.dp), shape = RoundedCornerShape(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                SkeletonBox(modifier = Modifier.size(width = 60.dp, height = 16.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+                SkeletonBox(modifier = Modifier.size(width = 120.dp, height = 12.dp))
+            }
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            SkeletonBox(modifier = Modifier.size(width = 65.dp, height = 16.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+            SkeletonBox(modifier = Modifier.size(width = 85.dp, height = 12.dp))
         }
     }
 }

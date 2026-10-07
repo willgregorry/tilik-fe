@@ -39,11 +39,9 @@ import id.tilik.app.ui.theme.TextMuted
 import id.tilik.app.ui.theme.TextPrimary
 
 import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.PieChart
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.BarChart
-import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.PieChart
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.ui.graphics.Color
 import id.tilik.app.ui.theme.AppAccent
 import id.tilik.app.ui.theme.AppGray
@@ -51,11 +49,12 @@ import id.tilik.app.ui.theme.AppGray
 enum class AppTab(val title: String, val activeIcon: ImageVector, val inactiveIcon: ImageVector) {
     HOME("Home", Icons.Rounded.Home, Icons.Outlined.Home),
     MARKETS("Markets", Icons.Rounded.BarChart, Icons.Outlined.BarChart),
-    PORTFOLIO("Portofolio", Icons.Rounded.PieChart, Icons.Outlined.PieChart),
-    PROFILE("Profile", Icons.Rounded.Person, Icons.Outlined.Person);
+    HISTORY("History", Icons.Rounded.History, Icons.Outlined.History),
+    SETTINGS("Settings", Icons.Rounded.Settings, Icons.Outlined.Settings);
 
     companion object {
-        val HISTORY = PORTFOLIO
+        val PORTFOLIO: AppTab get() = HISTORY
+        val PROFILE: AppTab get() = SETTINGS
     }
 }
 

@@ -1,10 +1,12 @@
 package id.tilik.app.ui.overlay
 
+import android.graphics.BitmapFactory
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -27,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.TrendingDown
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -51,7 +55,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -59,6 +66,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import id.tilik.app.data.model.UserRole
+import id.tilik.app.data.session.SessionManager
 import id.tilik.app.data.model.BrokerDetail
 import id.tilik.app.data.model.FactCheckPoint
 import id.tilik.app.data.model.VerdictLevel
@@ -72,6 +81,7 @@ import id.tilik.app.ui.theme.StatusSuccessBg
 import id.tilik.app.ui.theme.StatusWarning
 import id.tilik.app.ui.theme.StatusWarningBg
 import id.tilik.app.ui.theme.TextMuted
+import id.tilik.app.ui.components.VerdictCardSkeleton
 import id.tilik.app.ui.theme.TextPrimary
 import id.tilik.app.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
@@ -89,8 +99,19 @@ private val TextSubtle = Color(0xFF888888)
 fun VerdictCardView(
     data: VerificationResponse,
     claimText: String? = null,
-    onCloseClick: () -> Unit
+    isLoading: Boolean = false,
+    onCloseClick: () -> Unit,
+    onReturnToInput: () -> Unit = onCloseClick
 ) {
+    if (isLoading) {
+        VerdictCardSkeleton(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.86f)
+        )
+        return
+    }
+
     val animOffsetY = remember { Animatable(0f) }
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -211,13 +232,17 @@ fun VerdictCardView(
                     ClaimQuoteSection(claimText = claimText)
                 }
 
-                // 3. Poin-Poin Hasil Pemeriksaan Fakta
-                if (data.points.isNotEmpty()) {
-                    FactPointsSection(points = data.points)
-                }
+                // 3. Poin-Poin Hasil Pemeriksaan Fakta atau Status Gagal (-)
+                if (data.status == "failed" || data.verdict == "-") {
+                    FailedRequestSection(onReturnToInput = onReturnToInput)
+                } else {
+                    if (data.points.isNotEmpty()) {
+                        FactPointsSection(points = data.points)
+                    }
 
-                // 4. Data Pasar & Finansial (Foreign Flow, Valuasi, Fundamental)
-                MarketDataSection(data = data)
+                    // 4. Data Pasar & Finansial (Foreign Flow, Valuasi, Fundamental)
+                    MarketDataSection(data = data)
+                }
 
                 // 5. Disclaimer Edukasi
                 DisclaimerSection()
@@ -225,6 +250,7 @@ fun VerdictCardView(
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
+            val isFailed = data.status == "failed" || data.verdict == "-"
             // Pinned Bottom Action Button (GoPay / OVO Style)
             Box(
                 modifier = Modifier
@@ -234,7 +260,7 @@ fun VerdictCardView(
                     .padding(horizontal = 20.dp, vertical = 12.dp)
             ) {
                 Button(
-                    onClick = onCloseClick,
+                    onClick = if (isFailed) onReturnToInput else onCloseClick,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = BrandPrimary,
                         contentColor = Color.White
@@ -244,11 +270,25 @@ fun VerdictCardView(
                         .fillMaxWidth()
                         .height(48.dp)
                 ) {
-                    Text(
-                        text = "Tutup",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (isFailed) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Kembali",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    } else {
+                        Text(
+                            text = "Tutup",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
@@ -326,6 +366,140 @@ private fun HeaderSection(
 }
 
 /**
+ * Section saat request API gagal, menampilkan role avatar user
+ * (Default PEMULA.jpg, atau EXPERT.jpg sesuai role profil akun yang tersimpan di SessionManager)
+ */
+@Composable
+private fun FailedRequestSection(
+    onReturnToInput: () -> Unit
+) {
+    val context = LocalContext.current
+    val userRole = remember { SessionManager.getUserRole() }
+    val roleBitmap = remember(userRole) {
+        val candidates = when (userRole) {
+            UserRole.EXPERT -> listOf("EXPERT.jpg", "expert.jpg", "expert.png", "role_expert.png")
+            UserRole.PEMULA -> listOf("PEMULA.jpg", "pemula.jpg", "pemula.png", "role_beginner.png")
+        }
+        var loaded: android.graphics.Bitmap? = null
+        for (f in candidates) {
+            try {
+                context.assets.open(f).use { input ->
+                    loaded = BitmapFactory.decodeStream(input)
+                }
+                if (loaded != null) break
+            } catch (_: Exception) {}
+        }
+        loaded
+    }
+
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = SectionCardBg),
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Role Avatar Circle (Menggantikan bulatan tanda minus)
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF1E1E1E))
+                    .border(1.5.dp, BrandPrimary.copy(alpha = 0.45f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                if (roleBitmap != null) {
+                    Image(
+                        bitmap = roleBitmap.asImageBitmap(),
+                        contentDescription = "Role ${userRole.displayName}",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                    )
+                } else {
+                    Text(
+                        text = if (userRole == UserRole.EXPERT) "PAKAR" else "PEMULA",
+                        color = BrandPrimary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Pill Role Badge
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(Color(0x1FFF5C35))
+                    .border(1.dp, Color(0x40FF5C35), RoundedCornerShape(percent = 50))
+                    .padding(horizontal = 10.dp, vertical = 3.dp)
+            ) {
+                Text(
+                    text = "Mode Investor: ${userRole.displayName}",
+                    color = BrandPrimary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "Gagal Memuat Data Bursa",
+                color = TextDark,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Permintaan verifikasi belum dapat diproses. Coba periksa kembali klaim Anda.",
+                color = TextSubtle,
+                fontSize = 12.5.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // CTA Button Kembali
+            Button(
+                onClick = onReturnToInput,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BrandPrimary,
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Kembali",
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+/**
  * Status Hero Banner: Solid White Card, Neutral Border, Clean Material Icons
  * (Zero glowing card, zero low-opacity borders)
  */
@@ -334,15 +508,17 @@ private fun VerdictHeroBanner(data: VerificationResponse) {
     val level = data.verdictLevel
 
     val accentColor = when (level) {
-        VerdictLevel.GREEN -> StatusSuccess
-        VerdictLevel.YELLOW -> StatusWarning
-        VerdictLevel.RED -> StatusDanger
+        VerdictLevel.SESUAI_FAKTA, VerdictLevel.GREEN -> StatusSuccess
+        VerdictLevel.WASPADA, VerdictLevel.YELLOW -> StatusWarning
+        VerdictLevel.HOAX_BAHAYA, VerdictLevel.RED -> StatusDanger
+        VerdictLevel.UNKNOWN -> TextSubtle
     }
 
     val icon = when (level) {
-        VerdictLevel.GREEN -> Icons.Rounded.CheckCircle
-        VerdictLevel.YELLOW -> Icons.Rounded.WarningAmber
-        VerdictLevel.RED -> Icons.Rounded.Warning
+        VerdictLevel.SESUAI_FAKTA, VerdictLevel.GREEN -> Icons.Rounded.CheckCircle
+        VerdictLevel.WASPADA, VerdictLevel.YELLOW -> Icons.Rounded.WarningAmber
+        VerdictLevel.HOAX_BAHAYA, VerdictLevel.RED -> Icons.Rounded.Warning
+        VerdictLevel.UNKNOWN -> Icons.Rounded.Info
     }
 
     Card(
@@ -374,13 +550,13 @@ private fun VerdictHeroBanner(data: VerificationResponse) {
                     )
                     Column {
                         Text(
-                            text = level.title,
+                            text = if (data.status == "failed" || level == VerdictLevel.UNKNOWN) "-" else level.title,
                             color = TextDark,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = level.label,
+                            text = if (data.status == "failed" || level == VerdictLevel.UNKNOWN) "-" else level.label,
                             color = accentColor,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold
@@ -396,8 +572,13 @@ private fun VerdictHeroBanner(data: VerificationResponse) {
                         .border(1.dp, BorderColor, RoundedCornerShape(6.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
+                    val confidenceText = if (data.status == "failed" || level == VerdictLevel.UNKNOWN || data.confidenceScore <= 0.0) {
+                        "Akurasi -"
+                    } else {
+                        "Akurasi ${data.confidencePercentage}%"
+                    }
                     Text(
-                        text = "Akurasi ${data.confidencePercentage}%",
+                        text = confidenceText,
                         color = TextSubtle,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -407,7 +588,7 @@ private fun VerdictHeroBanner(data: VerificationResponse) {
             }
 
             // Cooling-off prompt / Catatan Analisis
-            if (data.coolingOffPrompt.isNotBlank()) {
+            if (data.coolingOffPrompt.isNotBlank() && data.coolingOffPrompt != "-") {
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
                 Spacer(modifier = Modifier.height(10.dp))
@@ -748,8 +929,9 @@ private fun MarketDataSection(data: VerificationResponse) {
                         color = TextBody,
                         fontSize = 13.sp
                     )
+                    val growthText = if (health.netProfitGrowthYoy == null) "-" else "${FinancialFormatter.formatPercentage(health.netProfitGrowthYoy)} YoY"
                     Text(
-                        text = "${FinancialFormatter.formatPercentage(health.netProfitGrowthYoy)} YoY",
+                        text = growthText,
                         color = TextDark,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,

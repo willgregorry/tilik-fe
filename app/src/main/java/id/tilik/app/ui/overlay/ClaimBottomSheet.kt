@@ -1,7 +1,9 @@
 package id.tilik.app.ui.overlay
 
+import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.view.HapticFeedbackConstants
 import android.view.ViewTreeObserver
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -19,7 +21,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,6 +29,7 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -42,10 +45,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.CloseFullscreen
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.ContentPaste
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Forum
+import androidx.compose.material.icons.rounded.OpenInFull
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -53,8 +64,10 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -65,44 +78,110 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.ClipboardManager as ComposeClipboardManager
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.TextToolbar
+import androidx.compose.ui.platform.TextToolbarStatus
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
+import id.tilik.app.R
 import id.tilik.app.detection.StockKeywordDetector
-import id.tilik.app.ui.theme.BrandPrimary
-import id.tilik.app.ui.theme.BrandSecondary
+import id.tilik.app.ui.theme.AppAccent
+import id.tilik.app.ui.theme.AppBg
+import id.tilik.app.ui.theme.AppBorder
 import id.tilik.app.ui.theme.AppCard
-import id.tilik.app.ui.theme.DarkSlateBackground
-import id.tilik.app.ui.theme.DarkSlateBorder
-import id.tilik.app.ui.theme.DarkSlateSurface
+import id.tilik.app.ui.theme.AppCardSubtle
+import id.tilik.app.ui.theme.AppGreen
+import id.tilik.app.ui.theme.AppGreenBg
+import id.tilik.app.ui.theme.AppGreenBorder
+import id.tilik.app.ui.theme.AppRed
 import id.tilik.app.ui.theme.TextPrimary
 import id.tilik.app.ui.theme.TextSecondary
-import id.tilik.app.ui.theme.VerdictValid
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-// Theme Colors matching Dark Investment Design System
-private val SheetBackground = Color(0xFF0A0A0A)
-private val SheetCardBg = Color(0xFF141414)
-private val SheetBorder = Color(0x14FFFFFF)
-private val BrandIndigo = BrandPrimary
-private val BrandViolet = BrandSecondary
-private val BrandVioletLight = Color(0xFF1E1E1E)
+internal data class TextToolbarMenuState(
+    val rect: Rect,
+    val onCopy: (() -> Unit)?,
+    val onPaste: (() -> Unit)?,
+    val onCut: (() -> Unit)?,
+    val onSelectAll: (() -> Unit)?
+)
+
+internal class OverlayTextToolbar(
+    val onShow: (
+        rect: Rect,
+        onCopy: (() -> Unit)?,
+        onPaste: (() -> Unit)?,
+        onCut: (() -> Unit)?,
+        onSelectAll: (() -> Unit)?
+    ) -> Unit,
+    val onHide: () -> Unit
+) : TextToolbar {
+    private var _status = TextToolbarStatus.Hidden
+    override val status: TextToolbarStatus
+        get() = _status
+
+    override fun showMenu(
+        rect: Rect,
+        onCopyRequested: (() -> Unit)?,
+        onPasteRequested: (() -> Unit)?,
+        onCutRequested: (() -> Unit)?,
+        onSelectAllRequested: (() -> Unit)?
+    ) {
+        _status = TextToolbarStatus.Shown
+        onShow(rect, onCopyRequested, onPasteRequested, onCutRequested, onSelectAllRequested)
+    }
+
+    override fun hide() {
+        _status = TextToolbarStatus.Hidden
+        onHide()
+    }
+}
+
+private fun getClipboardString(context: Context): String? {
+    return try {
+        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+        if (cm?.hasPrimaryClip() == true) {
+            val clip = cm.primaryClip
+            if (clip != null && clip.itemCount > 0) {
+                clip.getItemAt(0).coerceToText(context)?.toString()?.trim()
+            } else null
+        } else null
+    } catch (_: Exception) {
+        null
+    }
+}
+
+private fun copyToClipboard(context: Context, text: String) {
+    try {
+        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+        val clip = ClipData.newPlainText("Tilik", text)
+        cm?.setPrimaryClip(clip)
+    } catch (e: Exception) {
+        Timber.tag("TILIK_MONITOR").w(e, "Gagal menyalin teks ke clipboard")
+    }
+}
 
 /**
  * Modal Bottom Sheet ala Grammarly yang muncul langsung di atas Threads atau WhatsApp
@@ -116,9 +195,50 @@ fun ClaimBottomSheet(
 ) {
     val context = LocalContext.current
     val view = LocalView.current
-    var textInput by remember(initialText) { mutableStateOf(initialText) }
+    var textFieldValue by remember(initialText) {
+        mutableStateOf(TextFieldValue(initialText, TextRange(initialText.length)))
+    }
+    val textInput = textFieldValue.text
     var isFromClipboard by remember(initialText) { mutableStateOf(initialText.isNotBlank()) }
     var hasUserManuallyEdited by remember { mutableStateOf(false) }
+
+    var menuState by remember { mutableStateOf<TextToolbarMenuState?>(null) }
+    var toolbarSize by remember { mutableStateOf(IntSize.Zero) }
+
+    val overlayTextToolbar = remember {
+        OverlayTextToolbar(
+            onShow = { rect, onCopy, onPaste, onCut, onSelectAll ->
+                menuState = TextToolbarMenuState(
+                    rect = rect,
+                    onCopy = onCopy,
+                    onPaste = onPaste,
+                    onCut = onCut,
+                    onSelectAll = onSelectAll
+                )
+            },
+            onHide = {
+                menuState = null
+            }
+        )
+    }
+
+    val customClipboardManager = remember(context) {
+        object : ComposeClipboardManager {
+            override fun getText(): AnnotatedString? {
+                val str = getClipboardString(context)
+                return if (!str.isNullOrEmpty()) AnnotatedString(str) else null
+            }
+
+            override fun setText(annotatedString: AnnotatedString) {
+                copyToClipboard(context, annotatedString.text)
+            }
+
+            override fun hasText(): Boolean {
+                val str = getClipboardString(context)
+                return !str.isNullOrEmpty()
+            }
+        }
+    }
 
     fun fetchLatestClipboard() {
         try {
@@ -129,8 +249,8 @@ fun ClaimBottomSheet(
                     val clipText = clip.getItemAt(0).coerceToText(context)?.toString()?.trim()
                     if (!clipText.isNullOrBlank()) {
                         // Perbarui jika teks clipboard baru berbeda dari yang sedang tampil
-                        if (!hasUserManuallyEdited || textInput != clipText || textInput.isBlank()) {
-                            textInput = clipText
+                        if (!hasUserManuallyEdited || textFieldValue.text != clipText || textFieldValue.text.isBlank()) {
+                            textFieldValue = TextFieldValue(clipText, TextRange(clipText.length))
                             isFromClipboard = true
                             Timber.tag("TILIK_MONITOR").i("📋 [SHEET AUTO CLIPBOARD] Berhasil menarik teks clipboard terbaru: ${clipText.take(50)}")
                         }
@@ -180,7 +300,7 @@ fun ClaimBottomSheet(
 
     LaunchedEffect(initialText) {
         if (initialText.isNotBlank()) {
-            textInput = initialText
+            textFieldValue = TextFieldValue(initialText, TextRange(initialText.length))
             isFromClipboard = true
             hasUserManuallyEdited = false
         } else {
@@ -338,12 +458,16 @@ fun ClaimBottomSheet(
     val currentDragOffset = animOffsetY.value.coerceAtLeast(-60f)
     val dynamicScrimAlpha = (scrimAlpha * (1f - (currentDragOffset.coerceAtLeast(0f) / 600f).coerceIn(0f, 1f)))
 
-    // Root Container yang memenuhi layar untuk modal blocking
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .imePadding()
+    // Root Container yang memenuhi layar untuk modal blocking dengan Custom TextToolbar & Clipboard
+    CompositionLocalProvider(
+        LocalTextToolbar provides overlayTextToolbar,
+        LocalClipboardManager provides customClipboardManager
     ) {
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .imePadding()
+        ) {
         // Scrim semi-transparan (Tap outside to minimize/dismiss dengan animasi halus)
         Box(
             modifier = Modifier
@@ -398,10 +522,10 @@ fun ClaimBottomSheet(
                     )
                     .offset { IntOffset(0, currentDragOffset.roundToInt()) }
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                    .background(SheetBackground)
+                    .background(AppBg)
                     .border(
                         width = 1.dp,
-                        color = SheetBorder,
+                        color = AppBorder,
                         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                     )
                     .clickable(
@@ -413,86 +537,7 @@ fun ClaimBottomSheet(
                     .navigationBarsPadding()
                     .padding(bottom = 16.dp)
             ) {
-            // Header & Drag Handle Area
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .pointerInput(isExpanded) {
-                        detectVerticalDragGestures(
-                            onDragStart = {
-                                lastDragVelocity = 0f
-                                lastDragTime = System.currentTimeMillis()
-                            },
-                            onDragEnd = { onDragFinished() },
-                            onDragCancel = { onDragCanceled() },
-                            onVerticalDrag = { change, dragAmount ->
-                                change.consume()
-                                onDragDelta(dragAmount)
-                            }
-                        )
-                    }
-            ) {
-                // Drag Handle Bar (Clean Neutral, tap to toggle expand)
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 10.dp, bottom = 8.dp)
-                        .width(if (isExpanded) 54.dp else 42.dp)
-                        .height(5.dp)
-                        .clip(CircleShape)
-                        .background(if (isExpanded) BrandViolet else Color(0xFFCBD5E1))
-                        .clickable {
-                            isExpanded = !isExpanded
-                            Timber.tag("TILIK_MONITOR").d("📐 [HANDLE CLICK TOGGLE] isExpanded=$isExpanded")
-                        }
-                )
-
-            // Header Section
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Left: Tilik Logo + Name Asset
-                androidx.compose.foundation.Image(
-                    painter = androidx.compose.ui.res.painterResource(id = id.tilik.app.R.drawable.logo_name),
-                    contentDescription = "Tilik",
-                    modifier = Modifier.height(36.dp),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                )
-
-                // Right: Close Icon
-                Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF1E1E1E))
-                        .clickable { animateAndDismiss() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Close,
-                        contentDescription = "Tutup",
-                        tint = TextSecondary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-            }
-
-            // Divider Line
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(SheetBorder)
-            )
-
-            // Content Area: Empty State vs Suggestion State
-            if (textInput.isBlank()) {
-                // ==================== EMPTY STATE ====================
+                // Header & Drag Handle Area
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -510,70 +555,71 @@ fun ClaimBottomSheet(
                                 }
                             )
                         }
-                        .padding(horizontal = 24.dp, vertical = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Drag Handle Bar (Clean Neutral, tap to toggle expand)
                     Box(
                         modifier = Modifier
-                            .size(54.dp)
+                            .align(Alignment.CenterHorizontally)
+                            .padding(top = 10.dp, bottom = 8.dp)
+                            .width(if (isExpanded) 54.dp else 42.dp)
+                            .height(5.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF1E1E1E)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Search,
-                            contentDescription = null,
-                            tint = BrandPrimary,
-                            modifier = Modifier.size(26.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Text(
-                        text = "Tilik Fakta Saham",
-                        color = TextPrimary,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.3).sp
+                            .background(if (isExpanded) AppAccent else Color(0x33FFFFFF))
+                            .clickable {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                isExpanded = !isExpanded
+                                Timber.tag("TILIK_MONITOR").d("📐 [HANDLE CLICK TOGGLE] isExpanded=$isExpanded")
+                            }
                     )
 
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Text(
-                        text = "Salin teks klaim atau ketik di sini untuk memverifikasi data fundamental dan transaksi pasar.",
-                        color = TextSecondary,
-                        fontSize = 12.5.sp,
-                        lineHeight = 18.sp,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Quick Samples
+                    // Header Section: Logo + Close Button
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        SampleChip(
-                            label = "BBRI Akumulasi Asing",
-                            modifier = Modifier.weight(1f)
+                        // Left: Tilik Logo + Name Asset
+                        Image(
+                            painter = painterResource(id = R.drawable.logo_name),
+                            contentDescription = "Tilik",
+                            modifier = Modifier.height(34.dp),
+                            contentScale = ContentScale.Fit
+                        )
+
+                        // Right: Close Icon
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(AppCardSubtle)
+                                .border(1.dp, AppBorder, CircleShape)
+                                .clickable {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    animateAndDismiss()
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
-                            textInput = "BBRI asing akumulasi masif ratusan miliar, valuasi murah siap all-time high!"
-                            isFromClipboard = true
-                        }
-                        SampleChip(
-                            label = "GOTO Rekor Laba",
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            textInput = "Si ijo mulai diserok bandar YP, valuasi salah harga to the moon!"
-                            isFromClipboard = true
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "Tutup",
+                                tint = TextSecondary,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
                 }
-            } else {
-                // ==================== ACTIVE CLAIM SUGGESTION CARD ====================
+
+                // Divider Line
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(AppBorder)
+                )
+
+                // Content Area: Active Claim Editor Card
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -581,114 +627,168 @@ fun ClaimBottomSheet(
                 ) {
                     Card(
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = SheetCardBg),
-                        border = BorderStroke(1.dp, SheetBorder),
+                        colors = CardDefaults.cardColors(containerColor = AppCard),
+                        border = BorderStroke(1.dp, AppBorder),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            // Card Header
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            // Header Row: Klaim Diskusi badge on left, Action icon buttons on right
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                // Left: Pill Badge for Claim / Detected Ticker
                                 if (detectedTicker != null) {
                                     Box(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(Color(0xFF1E1E1E))
-                                            .border(1.dp, SheetBorder, RoundedCornerShape(6.dp))
-                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                            .clip(RoundedCornerShape(percent = 50))
+                                            .background(AppGreenBg)
+                                            .border(1.dp, AppGreenBorder, RoundedCornerShape(percent = 50))
+                                            .padding(horizontal = 10.dp, vertical = 5.dp)
                                     ) {
-                                        Text(
-                                            text = "EMITEN: $$detectedTicker",
-                                            color = BrandPrimary,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            fontFamily = FontFamily.Monospace
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Rounded.TrendingUp,
+                                                contentDescription = null,
+                                                tint = AppGreen,
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                            Text(
+                                                text = "$$detectedTicker",
+                                                color = AppGreen,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                fontFamily = FontFamily.Monospace
+                                            )
+                                        }
                                     }
                                 } else {
                                     Box(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(Color(0xFF1E1E1E))
-                                            .border(1.dp, SheetBorder, RoundedCornerShape(6.dp))
-                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                            .clip(RoundedCornerShape(percent = 50))
+                                            .background(AppCardSubtle)
+                                            .border(1.dp, AppBorder, RoundedCornerShape(percent = 50))
+                                            .padding(horizontal = 10.dp, vertical = 5.dp)
                                     ) {
-                                        Text(
-                                            text = "KLAIM DISKUSI",
-                                            color = TextSecondary,
-                                            fontSize = 10.5.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            fontFamily = FontFamily.Monospace
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Forum,
+                                                contentDescription = null,
+                                                tint = AppAccent,
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                            Text(
+                                                text = "Klaim Diskusi",
+                                                color = TextPrimary,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        }
                                     }
                                 }
 
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = if (isExpanded) "Perkecil" else "Perluas",
-                                        color = BrandPrimary,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold,
+                                // Right: Modern Icon Actions (Segarkan, Perluas/Perkecil, Hapus)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    // 1. Segarkan (Refresh Clipboard)
+                                    Box(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
+                                            .size(32.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(AppCardSubtle)
+                                            .border(1.dp, AppBorder, RoundedCornerShape(8.dp))
                                             .clickable {
-                                                isExpanded = !isExpanded
-                                                Timber.tag("TILIK_MONITOR").d("📐 [TOGGLE EXPAND] Sheet di-toggle -> isExpanded=$isExpanded")
-                                            }
-                                            .padding(horizontal = 6.dp, vertical = 3.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Segarkan",
-                                        color = BrandPrimary,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .clickable {
+                                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                                 hasUserManuallyEdited = false
                                                 fetchLatestClipboard()
-                                            }
-                                            .padding(horizontal = 6.dp, vertical = 3.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Hapus",
-                                        color = TextSecondary,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Normal,
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Refresh,
+                                            contentDescription = "Segarkan",
+                                            tint = if (isFromClipboard) AppAccent else TextSecondary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+
+                                    // 2. Perluas / Perkecil (Toggle Sheet Height)
+                                    Box(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
+                                            .size(32.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(if (isExpanded) AppAccent.copy(alpha = 0.15f) else AppCardSubtle)
+                                            .border(
+                                                1.dp,
+                                                if (isExpanded) AppAccent.copy(alpha = 0.4f) else AppBorder,
+                                                RoundedCornerShape(8.dp)
+                                            )
                                             .clickable {
-                                                textInput = ""
+                                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                                isExpanded = !isExpanded
+                                                Timber.tag("TILIK_MONITOR").d("📐 [TOGGLE EXPAND] Sheet di-toggle -> isExpanded=$isExpanded")
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isExpanded) Icons.Rounded.CloseFullscreen else Icons.Rounded.OpenInFull,
+                                            contentDescription = if (isExpanded) "Perkecil" else "Perluas",
+                                            tint = if (isExpanded) AppAccent else TextSecondary,
+                                            modifier = Modifier.size(15.dp)
+                                        )
+                                    }
+
+                                    // 3. Hapus (Clear text input)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(AppCardSubtle)
+                                            .border(1.dp, AppBorder, RoundedCornerShape(8.dp))
+                                            .clickable(enabled = textInput.isNotEmpty()) {
+                                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                                textFieldValue = TextFieldValue("", TextRange.Zero)
                                                 isFromClipboard = false
                                                 hasUserManuallyEdited = false
-                                            }
-                                            .padding(horizontal = 4.dp, vertical = 3.dp)
-                                    )
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.DeleteOutline,
+                                            contentDescription = "Hapus",
+                                            tint = if (textInput.isNotEmpty()) AppRed.copy(alpha = 0.85f) else TextSecondary.copy(alpha = 0.35f),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
-                            // Claim Text
+                            // Claim Text Field
                             OutlinedTextField(
-                                value = textInput,
-                                onValueChange = {
-                                    textInput = it
+                                value = textFieldValue,
+                                onValueChange = { newValue ->
+                                    textFieldValue = newValue
                                     hasUserManuallyEdited = true
-                                    if (it.isBlank()) {
+                                    if (newValue.text.isBlank()) {
                                         isFromClipboard = false
                                         hasUserManuallyEdited = false
                                     }
                                 },
                                 placeholder = {
                                     Text(
-                                        text = "Ketik atau salin klaim saham di sini...",
-                                        color = TextSecondary.copy(alpha = 0.6f),
+                                        text = "Ketik atau salin klaim saham dari Threads/X di sini...",
+                                        color = TextSecondary.copy(alpha = 0.85f),
                                         fontSize = 13.sp
                                     )
                                 },
@@ -697,11 +797,11 @@ fun ClaimBottomSheet(
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedTextColor = TextPrimary,
                                     unfocusedTextColor = TextPrimary,
-                                    focusedContainerColor = AppCard,
-                                    unfocusedContainerColor = AppCard,
-                                    focusedBorderColor = BrandPrimary,
-                                    unfocusedBorderColor = Color(0x1AFFFFFF),
-                                    cursorColor = BrandPrimary
+                                    focusedContainerColor = AppCardSubtle,
+                                    unfocusedContainerColor = AppCardSubtle,
+                                    focusedBorderColor = AppAccent,
+                                    unfocusedBorderColor = AppBorder,
+                                    cursorColor = AppAccent
                                 ),
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier
@@ -717,15 +817,16 @@ fun ClaimBottomSheet(
                     Button(
                         onClick = {
                             if (textInput.isNotBlank()) {
+                                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                                 onSubmitClaim(textInput.trim(), detectedTicker)
                             }
                         },
                         enabled = textInput.isNotBlank(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = BrandPrimary,
+                            containerColor = AppAccent,
                             contentColor = Color.White,
-                            disabledContainerColor = Color(0xFF1E1E1E),
-                            disabledContentColor = Color(0xFF737373)
+                            disabledContainerColor = AppCardSubtle,
+                            disabledContentColor = Color(0xFF555555)
                         ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
@@ -744,46 +845,232 @@ fun ClaimBottomSheet(
                             fontWeight = FontWeight.Bold
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Hint dismiss
+                    Text(
+                        text = "Ketuk area di luar untuk menutup",
+                        color = TextSecondary.copy(alpha = 0.6f),
+                        fontSize = 11.sp,
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .clickable { animateAndDismiss() }
+                    )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(8.dp))
+        // Floating Text Selection Toolbar ala native Android (muncul saat user tahan/seleksi teks)
+        if (menuState != null) {
+                val currentMenu = menuState!!
+                // Dismiss backdrop jika tap di luar floating toolbar
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            overlayTextToolbar.hide()
+                        }
+                )
 
-            // Hint dismiss
-            Text(
-                text = "Ketuk area di luar untuk menutup",
-                color = TextSecondary.copy(alpha = 0.7f),
-                fontSize = 11.sp,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .clickable { animateAndDismiss() }
-            )
+                val density = LocalDensity.current
+                val screenWidthPx = with(density) { maxWidth.toPx() }
+                val screenHeightPx = with(density) { maxHeight.toPx() }
+
+                val actualW = if (toolbarSize.width > 0) toolbarSize.width.toFloat() else with(density) { 240.dp.toPx() }
+                val actualH = if (toolbarSize.height > 0) toolbarSize.height.toFloat() else with(density) { 46.dp.toPx() }
+
+                val rect = currentMenu.rect
+                val spaceAbove = rect.top
+                val targetY = if (spaceAbove > actualH + 16f) {
+                    (rect.top - actualH - 12f).coerceAtLeast(16f)
+                } else {
+                    (rect.bottom + 12f).coerceAtMost(screenHeightPx - actualH - 16f)
+                }
+
+                val centerX = if (rect.width > 0) (rect.left + rect.right) / 2f else rect.left
+                val targetX = (centerX - actualW / 2f).coerceIn(16f, (screenWidthPx - actualW - 16f).coerceAtLeast(16f))
+
+                Box(
+                    modifier = Modifier
+                        .offset { IntOffset(targetX.roundToInt(), targetY.roundToInt()) }
+                        .onGloballyPositioned { coordinates ->
+                            toolbarSize = coordinates.size
+                        }
+                ) {
+                    TextSelectionFloatingToolbar(
+                        menuState = currentMenu,
+                        textFieldValue = textFieldValue,
+                        hasClipboard = !getClipboardString(context).isNullOrEmpty(),
+                        onSelectAllClick = {
+                            currentMenu.onSelectAll?.invoke()
+                            textFieldValue = textFieldValue.copy(selection = TextRange(0, textFieldValue.text.length))
+                        },
+                        onCutClick = {
+                            val sel = textFieldValue.selection
+                            if (currentMenu.onCut != null) {
+                                currentMenu.onCut.invoke()
+                            } else if (sel.length > 0) {
+                                val textToCut = textFieldValue.text.substring(sel.min, sel.max)
+                                copyToClipboard(context, textToCut)
+                                val newText = textFieldValue.text.removeRange(sel.min, sel.max)
+                                textFieldValue = TextFieldValue(newText, selection = TextRange(sel.min))
+                                hasUserManuallyEdited = true
+                            }
+                            overlayTextToolbar.hide()
+                        },
+                        onCopyClick = {
+                            val sel = textFieldValue.selection
+                            if (currentMenu.onCopy != null) {
+                                currentMenu.onCopy.invoke()
+                            } else if (sel.length > 0) {
+                                val textToCopy = textFieldValue.text.substring(sel.min, sel.max)
+                                copyToClipboard(context, textToCopy)
+                            }
+                            overlayTextToolbar.hide()
+                        },
+                        onPasteClick = {
+                            val clipString = getClipboardString(context)
+                            if (currentMenu.onPaste != null) {
+                                currentMenu.onPaste.invoke()
+                            } else if (!clipString.isNullOrEmpty()) {
+                                val sel = textFieldValue.selection
+                                val start = sel.min.coerceIn(0, textFieldValue.text.length)
+                                val end = sel.max.coerceIn(0, textFieldValue.text.length)
+                                val newText = textFieldValue.text.replaceRange(start, end, clipString)
+                                val newCursor = start + clipString.length
+                                textFieldValue = TextFieldValue(newText, selection = TextRange(newCursor))
+                                hasUserManuallyEdited = true
+                            }
+                            overlayTextToolbar.hide()
+                        }
+                    )
+                }
+            }
         }
     }
 }
+
+@Composable
+private fun TextSelectionFloatingToolbar(
+    menuState: TextToolbarMenuState,
+    textFieldValue: TextFieldValue,
+    hasClipboard: Boolean,
+    onSelectAllClick: () -> Unit,
+    onCutClick: () -> Unit,
+    onCopyClick: () -> Unit,
+    onPasteClick: () -> Unit
+) {
+    val canSelectAll = menuState.onSelectAll != null ||
+            (textFieldValue.text.isNotEmpty() && textFieldValue.selection.length < textFieldValue.text.length)
+    val canCut = menuState.onCut != null || textFieldValue.selection.length > 0
+    val canCopy = menuState.onCopy != null || textFieldValue.selection.length > 0
+    val canPaste = menuState.onPaste != null || hasClipboard
+
+    if (!canSelectAll && !canCut && !canCopy && !canPaste) return
+
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = Color(0xFF222222),
+        border = BorderStroke(1.dp, Color(0x33FFFFFF)),
+        shadowElevation = 8.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            var needDivider = false
+
+            if (canCut) {
+                ToolbarActionItem(
+                    icon = Icons.Rounded.ContentCut,
+                    label = "Potong",
+                    onClick = onCutClick
+                )
+                needDivider = true
+            }
+
+            if (canCopy) {
+                if (needDivider) {
+                    ToolbarDivider()
+                }
+                ToolbarActionItem(
+                    icon = Icons.Rounded.ContentCopy,
+                    label = "Salin",
+                    onClick = onCopyClick
+                )
+                needDivider = true
+            }
+
+            if (canPaste) {
+                if (needDivider) {
+                    ToolbarDivider()
+                }
+                ToolbarActionItem(
+                    icon = Icons.Rounded.ContentPaste,
+                    label = "Tempel",
+                    onClick = onPasteClick
+                )
+                needDivider = true
+            }
+
+            if (canSelectAll) {
+                if (needDivider) {
+                    ToolbarDivider()
+                }
+                ToolbarActionItem(
+                    icon = Icons.Rounded.SelectAll,
+                    label = "Pilih Semua",
+                    onClick = onSelectAllClick
+                )
+            }
+        }
+    }
 }
 
 @Composable
-private fun SampleChip(
+private fun ToolbarDivider() {
+    Box(
+        modifier = Modifier
+            .height(18.dp)
+            .width(1.dp)
+            .background(Color(0x22FFFFFF))
+    )
+}
+
+@Composable
+private fun ToolbarActionItem(
+    icon: ImageVector,
     label: String,
-    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFF1F5F9))
-            .border(1.dp, SheetBorder, RoundedCornerShape(8.dp))
-            .clickable { onClick() }
+    val view = LocalView.current
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .clickable {
+                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                onClick()
+            }
             .padding(horizontal = 10.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = Color.White,
+            modifier = Modifier.size(15.dp)
+        )
         Text(
             text = label,
-            color = TextPrimary,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1
+            color = Color.White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
+

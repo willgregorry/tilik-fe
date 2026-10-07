@@ -2,12 +2,191 @@
     "openapi": "3.1.0",
     "info": {
         "title": "Tilik AI Backend",
-        "description": "Tilik AI â In-Context Financial Fact-Checker \u0026 Slang RAG Engine for IDX Stocks",
+        "description": "Tilik AI — In-Context Financial Fact-Checker & Slang RAG Engine for IDX Stocks",
         "version": "2.0.0"
     },
     "paths": {
+        "/api/v1/auth/google": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Sign in with Google",
+                "description": "Exchanges Google ID Token from client for a Tilik AI JWT access token.",
+                "operationId": "login_with_google_api_v1_auth_google_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GoogleAuthRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Token Google tidak memuat identifier akun yang valid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token Google tidak valid atau kedaluwarsa.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Batas frekuensi permintaan terlampaui.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Kesalahan server internal saat proses login.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/me": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get Current User Profile",
+                "description": "Returns authenticated user information from validated Bearer JWT token.",
+                "operationId": "get_current_user_profile_api_v1_auth_me_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserProfileResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Autentikasi diperlukan (Bearer token tidak valid atau tidak disertakan).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/user/settings": {
+            "put": {
+                "tags": [
+                    "User Settings"
+                ],
+                "summary": "Update User Role Setting",
+                "description": "Updates and persists preferred display role (PEMULA or EXPERT) for authenticated user.",
+                "operationId": "update_user_settings_api_v1_user_settings_put",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserSettingsUpdate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserProfileResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Autentikasi diperlukan.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Format role tidak valid (hanya menerima PEMULA atau EXPERT).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
         "/api/v1/verify": {
             "post": {
+                "tags": [
+                    "Verification"
+                ],
                 "summary": "Verify Social Media Stock Tweet",
                 "description": "Fact-checks claims from social media stock posts using Sectors API v2 and Slang RAG.",
                 "operationId": "verify_tweet_api_v1_verify_post",
@@ -33,6 +212,227 @@
                         }
                     },
                     "422": {
+                        "description": "Teks cuitan terlalu pendek (minimal 5 karakter) atau format request tidak valid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Batas frekuensi permintaan terlampaui.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Terjadi kesalahan internal pada pipeline verifikasi.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/history": {
+            "get": {
+                "tags": [
+                    "History"
+                ],
+                "summary": "Get Verification History",
+                "description": "Retrieves chronological verification history for the current authenticated user or guest.",
+                "operationId": "list_verification_history_api_v1_history_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "description": "Jumlah item per halaman",
+                            "default": 20,
+                            "title": "Limit"
+                        },
+                        "description": "Jumlah item per halaman"
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Offset pemanggilan riwayat",
+                            "default": 0,
+                            "title": "Offset"
+                        },
+                        "description": "Offset pemanggilan riwayat"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HistoryListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "History"
+                ],
+                "summary": "Clear Verification History",
+                "description": "Clears all verification history for current authenticated user or guest.",
+                "operationId": "clear_verification_history_api_v1_history_delete",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/history/{history_id}": {
+            "get": {
+                "tags": [
+                    "History"
+                ],
+                "summary": "Get Verification History Detail",
+                "description": "Retrieves full verification detail (Level 1 and Level 2 data) by history ID for deep inspection.",
+                "operationId": "get_verification_history_detail_api_v1_history__history_id__get",
+                "parameters": [
+                    {
+                        "name": "history_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "History Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HistoryDetailResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Riwayat verifikasi dengan ID yang diminta tidak ditemukan.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "History"
+                ],
+                "summary": "Delete Single History Record",
+                "description": "Deletes a specific history record by its unique ID.",
+                "operationId": "delete_verification_history_item_api_v1_history__history_id__delete",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "history_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "History Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Riwayat verifikasi dengan ID yang diminta tidak ditemukan.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
                         "description": "Validation Error",
                         "content": {
                             "application/json": {
@@ -47,7 +447,10 @@
         },
         "/api/v1/health": {
             "get": {
-                "summary": "System Health \u0026 Connectivity Status",
+                "tags": [
+                    "Health"
+                ],
+                "summary": "System Health & Connectivity Status",
                 "description": "Checks operational status of Tilik AI backend, RAG store, Gemini, and Sectors API.",
                 "operationId": "get_health_api_v1_health_get",
                 "responses": {
@@ -109,6 +512,42 @@
     },
     "components": {
         "schemas": {
+            "AuthResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "default": "success",
+                        "example": "success"
+                    },
+                    "access_token": {
+                        "type": "string",
+                        "title": "Access Token",
+                        "description": "JWT Bearer access token untuk Tilik AI"
+                    },
+                    "token_type": {
+                        "type": "string",
+                        "title": "Token Type",
+                        "default": "bearer",
+                        "example": "bearer"
+                    },
+                    "expires_in": {
+                        "type": "integer",
+                        "title": "Expires In",
+                        "description": "Masa berlaku token dalam detik (misal: 86400)"
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/UserPayload"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "access_token",
+                    "expires_in",
+                    "user"
+                ],
+                "title": "AuthResponse"
+            },
             "BrokerDetail": {
                 "properties": {
                     "broker_code": {
@@ -175,6 +614,43 @@
                 ],
                 "title": "BrokerFlowDetail"
             },
+            "ErrorResponse": {
+                "properties": {
+                    "detail": {
+                        "title": "Detail",
+                        "description": "Deskripsi detail kesalahan atau daftar kegagalan validasi"
+                    },
+                    "message": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Message",
+                        "description": "Pesan ringkas kesalahan yang ramah pengguna"
+                    },
+                    "error_type": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Error Type",
+                        "description": "Tipe klasifikasi error"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "detail"
+                ],
+                "title": "ErrorResponse"
+            },
             "ExpandedDetails": {
                 "properties": {
                     "valuation": {
@@ -200,7 +676,7 @@
                     "title": {
                         "type": "string",
                         "title": "Title",
-                        "description": "Parameter fakta, misal: \u0027Valuasi PER\u0027"
+                        "description": "Parameter fakta, misal: 'Valuasi PER' atau 'Kewajaran Harga Saham'"
                     },
                     "fact": {
                         "type": "string",
@@ -259,7 +735,7 @@
                         },
                         "type": "array",
                         "title": "Special Notations",
-                        "description": "Daftar tato bursa, misal: [\u0027X\u0027]"
+                        "description": "Daftar tato bursa, misal: ['X']"
                     }
                 },
                 "type": "object",
@@ -267,6 +743,20 @@
                     "is_fca"
                 ],
                 "title": "FinancialHealthDetail"
+            },
+            "GoogleAuthRequest": {
+                "properties": {
+                    "id_token": {
+                        "type": "string",
+                        "title": "Id Token",
+                        "description": "Google ID Token (JWT) yang diperoleh dari Android Google Credential Manager atau Google Sign-In SDK"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id_token"
+                ],
+                "title": "GoogleAuthRequest"
             },
             "HTTPValidationError": {
                 "properties": {
@@ -318,10 +808,262 @@
                         "title": "Slang Rag Records",
                         "default": 0,
                         "example": 52
+                    },
+                    "cache_backend": {
+                        "type": "string",
+                        "title": "Cache Backend",
+                        "default": "in_memory",
+                        "example": "redis | in_memory"
                     }
                 },
                 "type": "object",
                 "title": "HealthResponse"
+            },
+            "HistoryDetailResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "default": "success",
+                        "example": "success"
+                    },
+                    "id": {
+                        "type": "string",
+                        "title": "Id",
+                        "description": "Unique ID rekaman riwayat"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "title": "Created At",
+                        "description": "Timestamp ISO verifikasi dilakukan"
+                    },
+                    "tweet_text": {
+                        "type": "string",
+                        "title": "Tweet Text",
+                        "description": "Teks lengkap cuitan yang diverifikasi"
+                    },
+                    "source_platform": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Source Platform",
+                        "description": "Platform media sosial sumber",
+                        "default": "x"
+                    },
+                    "verification": {
+                        "$ref": "#/components/schemas/VerificationResponse",
+                        "description": "Hasil lengkap verifikasi Level 1 dan Level 2"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "created_at",
+                    "tweet_text",
+                    "verification"
+                ],
+                "title": "HistoryDetailResponse"
+            },
+            "HistoryItemSummary": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id",
+                        "description": "Unique ID rekaman riwayat verifikasi"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "title": "Created At",
+                        "description": "Timestamp ISO verifikasi dilakukan"
+                    },
+                    "ticker": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Ticker",
+                        "description": "Kode saham IDX, misal: GOTO"
+                    },
+                    "company_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Company Name",
+                        "description": "Nama perusahaan emiten resmi"
+                    },
+                    "user_role": {
+                        "$ref": "#/components/schemas/UserRole",
+                        "description": "Role saat verifikasi (PEMULA atau EXPERT)"
+                    },
+                    "verdict": {
+                        "$ref": "#/components/schemas/VerdictLevel",
+                        "description": "Status lampu lalu lintas verifikasi"
+                    },
+                    "confidence_score": {
+                        "type": "number",
+                        "title": "Confidence Score",
+                        "description": "Skor keyakinan algoritma"
+                    },
+                    "tweet_preview": {
+                        "type": "string",
+                        "title": "Tweet Preview",
+                        "description": "Potongan awal teks cuitan pengguna"
+                    },
+                    "source_platform": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Source Platform",
+                        "description": "Platform media sosial sumber",
+                        "default": "x"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "created_at",
+                    "user_role",
+                    "verdict",
+                    "confidence_score",
+                    "tweet_preview"
+                ],
+                "title": "HistoryItemSummary"
+            },
+            "HistoryListResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "default": "success",
+                        "example": "success"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "title": "Total",
+                        "description": "Jumlah total riwayat yang tersimpan"
+                    },
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/HistoryItemSummary"
+                        },
+                        "type": "array",
+                        "title": "Items",
+                        "description": "Daftar ringkasan riwayat verifikasi"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "total"
+                ],
+                "title": "HistoryListResponse"
+            },
+            "UserPayload": {
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "title": "Email",
+                        "description": "Alamat email pengguna dari akun Google"
+                    },
+                    "name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Name",
+                        "description": "Nama lengkap pengguna"
+                    },
+                    "picture": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Picture",
+                        "description": "URL avatar Google profile"
+                    },
+                    "google_id": {
+                        "type": "string",
+                        "title": "Google Id",
+                        "description": "Identitas unik Google pengguna (sub claim)"
+                    },
+                    "user_role": {
+                        "$ref": "#/components/schemas/UserRole",
+                        "description": "Preferensi role pengguna: PEMULA atau EXPERT",
+                        "default": "PEMULA"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "email",
+                    "google_id"
+                ],
+                "title": "UserPayload"
+            },
+            "UserProfileResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "default": "success",
+                        "example": "success"
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/UserPayload"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "user"
+                ],
+                "title": "UserProfileResponse"
+            },
+            "UserRole": {
+                "type": "string",
+                "enum": [
+                    "PEMULA",
+                    "EXPERT"
+                ],
+                "title": "UserRole",
+                "description": "User proficiency role determining tone of voice and alert prompt."
+            },
+            "UserSettingsUpdate": {
+                "properties": {
+                    "user_role": {
+                        "$ref": "#/components/schemas/UserRole",
+                        "description": "Pilihan mode tampilan: PEMULA atau EXPERT"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "user_role"
+                ],
+                "title": "UserSettingsUpdate"
             },
             "ValidationError": {
                 "properties": {
@@ -428,12 +1170,15 @@
             "VerdictLevel": {
                 "type": "string",
                 "enum": [
-                    "RED",
-                    "YELLOW",
-                    "GREEN"
+                    "HOAX_BAHAYA",
+                    "WASPADA",
+                    "SESUAI_FAKTA",
+                    "HOAX_BAHAYA",
+                    "WASPADA",
+                    "SESUAI_FAKTA"
                 ],
                 "title": "VerdictLevel",
-                "description": "Traffic light verdict status."
+                "description": "Traffic light verdict status according to PRD v2 & POJK Invariants."
             },
             "VerificationResponse": {
                 "properties": {
@@ -467,14 +1212,19 @@
                         "title": "Company Name",
                         "example": "GoTo Gojek Tokopedia Tbk"
                     },
+                    "user_role": {
+                        "$ref": "#/components/schemas/UserRole",
+                        "description": "Role yang digunakan saat request — di-echo kembali untuk kebutuhan UI rendering",
+                        "default": "PEMULA"
+                    },
                     "verdict": {
                         "$ref": "#/components/schemas/VerdictLevel",
                         "description": "Status lampu lalu lintas"
                     },
                     "confidence_score": {
                         "type": "number",
-                        "maximum": 1.0,
-                        "minimum": 0.0,
+                        "maximum": 1,
+                        "minimum": 0,
                         "title": "Confidence Score",
                         "example": 0.94
                     },
@@ -490,7 +1240,8 @@
                     "cooling_off_prompt": {
                         "type": "string",
                         "title": "Cooling Off Prompt",
-                        "example": "Tarik napas 5 detik! Yakin membeli karena analisa atau takut tertinggal harga?"
+                        "description": "Pesan statis refleksi (Pemula) atau pertanyaan devil's advocate (Expert)",
+                        "example": "Catatan Panduan: BBCA sangat solid namun harganya premium. Mencicil bertahap (DCA) jauh lebih terukur."
                     },
                     "details": {
                         "$ref": "#/components/schemas/ExpandedDetails"
@@ -499,6 +1250,18 @@
                         "type": "boolean",
                         "title": "Is Cached",
                         "default": false
+                    },
+                    "history_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "History Id",
+                        "description": "Unique ID rekaman riwayat verifikasi"
                     }
                 },
                 "type": "object",
@@ -532,6 +1295,17 @@
                         "title": "Source Platform",
                         "default": "x",
                         "example": "x | threads | telegram"
+                    },
+                    "user_role": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/UserRole"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Mode tampilan dan bahasa. Jika None, otomatis menggunakan settingan profil user yang login atau PEMULA untuk guest."
                     }
                 },
                 "type": "object",
@@ -540,6 +1314,38 @@
                 ],
                 "title": "VerifyTweetRequest"
             }
+        },
+        "securitySchemes": {
+            "HTTPBearer": {
+                "type": "http",
+                "scheme": "bearer"
+            }
         }
-    }
+    },
+    "tags": [
+        {
+            "name": "Verification",
+            "description": "Endpoint utama verifikasi fakta cuitan saham menggunakan data resmi Sectors API v2 dan RAG Slang bursa."
+        },
+        {
+            "name": "History",
+            "description": "Pengelolaan dan inspeksi mendalam (click-to-detail) riwayat verifikasi Level 1 dan Level 2."
+        },
+        {
+            "name": "Authentication",
+            "description": "Autentikasi Google Sign-In dan penerbitan token JWT Bearer."
+        },
+        {
+            "name": "User Settings",
+            "description": "Pengaturan preferensi profil pengguna (mode PEMULA atau EXPERT)."
+        },
+        {
+            "name": "Health",
+            "description": "Pemeriksaan kesehatan sistem, konektivitas Sectors API, Gemini LLM, RAG store, dan Cache."
+        },
+        {
+            "name": "Root",
+            "description": "Informasi dasar service gateway dan shortcut endpoint."
+        }
+    ]
 }

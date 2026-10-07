@@ -24,8 +24,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -63,12 +61,12 @@ fun FloatingBubbleView(
     onCloseClick: () -> Unit
 ) {
     val alphaAnim by animateFloatAsState(
-        targetValue = if (isTucked) 0.42f else 1.0f,
+        targetValue = if (isTucked) 0.38f else 1.0f,
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
         label = "bubbleAlpha"
     )
     val scaleAnim by animateFloatAsState(
-        targetValue = if (isTucked) 0.86f else 1.0f,
+        targetValue = if (isTucked) 0.72f else 1.0f,
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
         label = "bubbleScale"
     )
@@ -98,7 +96,7 @@ fun FloatingBubbleView(
                 CapturingBubble(onClick = onBubbleClick)
             }
             OverlayState.ANALYZING -> {
-                AnalyzingCapsule()
+                AnalyzingBubble()
             }
             OverlayState.ERROR -> {
                 ErrorBubble(
@@ -132,7 +130,6 @@ private fun IdleBubble(
                     color = BrandPrimary,
                     shape = RoundedCornerShape(28.dp)
                 )
-                .clickable { onClick() }
                 .padding(end = 14.dp)
         ) {
             Box(
@@ -189,48 +186,18 @@ private fun IdleBubble(
                     color = BrandPrimary,
                     shape = CircleShape
                 )
-                .clickable { onClick() }
         ) {
-            Crossfade(
-                targetState = isTucked,
-                animationSpec = tween(durationMillis = 200),
-                label = "tuckedCrossfade"
-            ) { tucked ->
-                if (tucked) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = if (isDockedOnLeft) Alignment.CenterEnd else Alignment.CenterStart
-                    ) {
-                        Icon(
-                            imageVector = if (isDockedOnLeft) {
-                                Icons.AutoMirrored.Rounded.KeyboardArrowRight
-                            } else {
-                                Icons.AutoMirrored.Rounded.KeyboardArrowLeft
-                            },
-                            contentDescription = "Buka Tilik",
-                            tint = BrandPrimary,
-                            modifier = Modifier
-                                .padding(
-                                    start = if (!isDockedOnLeft) 6.dp else 0.dp,
-                                    end = if (isDockedOnLeft) 6.dp else 0.dp
-                                )
-                                .size(22.dp)
-                        )
-                    }
-                } else {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        androidx.compose.foundation.Image(
-                            painter = androidx.compose.ui.res.painterResource(id = id.tilik.app.R.drawable.favicon),
-                            contentDescription = "Tilik",
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                        )
-                    }
-                }
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(id = id.tilik.app.R.drawable.favicon),
+                    contentDescription = "Tilik",
+                    modifier = Modifier
+                        .size(if (isTucked) 32.dp else 40.dp)
+                        .clip(CircleShape)
+                )
             }
         }
     }
@@ -242,7 +209,6 @@ private fun CapturingBubble(onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(56.dp)
-            .clickable { onClick() }
     ) {
         Box(
             contentAlignment = Alignment.Center,
@@ -262,29 +228,25 @@ private fun CapturingBubble(onClick: () -> Unit) {
 }
 
 @Composable
-private fun AnalyzingCapsule() {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .height(42.dp)
-            .clip(RoundedCornerShape(21.dp))
-            .background(AppCard)
-            .border(1.5.dp, BrandPrimary, RoundedCornerShape(21.dp))
-            .padding(horizontal = 14.dp)
+private fun AnalyzingBubble() {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.size(56.dp)
     ) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(16.dp),
-            color = BrandPrimary,
-            strokeWidth = 2.dp
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = "Menilik bursa...",
-            color = TextPrimary,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold
-        )
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(AppCard)
+                .border(2.dp, BrandPrimary, CircleShape)
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                color = BrandPrimary,
+                strokeWidth = 2.5.dp
+            )
+        }
     }
 }
 

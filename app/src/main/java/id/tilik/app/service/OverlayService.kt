@@ -131,7 +131,20 @@ class OverlayService : Service() {
                 stopSelf()
             }
         }
-        return START_STICKY
+        return START_NOT_STICKY
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        Timber.tag("TILIK_MONITOR").i("🧹 [TASK REMOVED] Aplikasi diswipe dari Recent Apps -> Menghentikan service & menutup floating bubble")
+        overlayWindowManager?.hide()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+        stopSelf()
     }
 
     fun getLatestClipboardText(): String? {
@@ -175,7 +188,7 @@ class OverlayService : Service() {
 
     private fun openClaimInput() {
         val clipText = getLatestClipboardText()
-        val textToUse = if (!clipText.isNullOrBlank()) clipText else null
+        val textToUse = if (!clipText.isNullOrBlank()) clipText else activeClaimText
         val tickerToUse = textToUse?.let { StockKeywordDetector.extractPotentialTicker(it) } ?: activeDetectedTicker
 
         overlayWindowManager?.updateState(
@@ -220,7 +233,7 @@ class OverlayService : Service() {
                 Timber.tag("TILIK_TERMINAL").e(e, "Gagal melakukan verifikasi API: ${e.message}")
             }
 
-            val finalData = verifiedData ?: createFallbackData(resolvedTicker, claim)
+            val finalData = verifiedData ?: createFailedData(resolvedTicker, claim)
 
             delay(250)
 
@@ -260,66 +273,33 @@ class OverlayService : Service() {
         return stream.toByteArray()
     }
 
-    private fun createFallbackData(ticker: String, claim: String): VerificationResponse {
-        val companyMap = mapOf(
-            "BBRI" to "Bank Rakyat Indonesia Tbk",
-            "BBCA" to "Bank Central Asia Tbk",
-            "BMRI" to "Bank Mandiri (Persero) Tbk",
-            "BBNI" to "Bank Negara Indonesia Tbk",
-            "ASII" to "Astra International Tbk",
-            "TLKM" to "Telkom Indonesia Tbk",
-            "GOTO" to "GoTo Gojek Tokopedia Tbk",
-            "AMMN" to "Amman Mineral Internasional Tbk"
-        )
-        val companyName = companyMap[ticker.uppercase()] ?: "$ticker Tbk"
-
+    private fun createFailedData(ticker: String, claim: String): VerificationResponse {
+        val cleanTicker = ticker.uppercase().takeIf { it.isNotBlank() && it != "IDX" } ?: "-"
         return VerificationResponse(
-            status = "fallback",
-            ticker = ticker.uppercase(),
-            companyName = companyName,
-            verdict = "YELLOW",
-            confidenceScore = 0.88,
-            points = listOf(
-                FactCheckPoint(
-                    title = "Kewajaran Harga Saham",
-                    fact = "Saat ini dihargai 2.4x PBV, berada pada batas atas rata-rata valuasi industri perbankan sejenis.",
-                    isFavorable = false
-                ),
-                FactCheckPoint(
-                    title = "Arus Dana Asing",
-                    fact = "Aliran dana asing tercatat fluktuatif, kenaikan volume perdagangan didorong oleh transaksi ritel domestik.",
-                    isFavorable = false
-                ),
-                FactCheckPoint(
-                    title = "Keamanan & Status Saham",
-                    fact = "Fundamental operasional tetap prima dan saham terbebas dari suspensi maupun pantauan khusus bursa (FCA).",
-                    isFavorable = true
-                )
-            ),
-            coolingOffPrompt = "Tarik napas 5 detik! Perusahaannya solid, tetapi harganya sedang di level premium. Lebih bijak membeli bertahap daripada buru-buru all-in!",
+            status = "failed",
+            ticker = cleanTicker,
+            companyName = "-",
+            verdict = "-",
+            confidenceScore = 0.0,
+            points = emptyList(),
+            coolingOffPrompt = "-",
             details = ExpandedDetails(
                 valuation = ValuationPeerDetail(
-                    peRatio = 12.8,
-                    pbvRatio = 2.4,
-                    industryMedianPe = 16.5,
-                    industryMedianPbv = 1.8,
-                    valuationStatus = "Valuasi Premium dari Median Industri"
+                    peRatio = null,
+                    pbvRatio = null,
+                    industryMedianPe = null,
+                    industryMedianPbv = null,
+                    valuationStatus = "-"
                 ),
                 brokerFlow = BrokerFlowDetail(
-                    foreignNetIdr = -15400000000.0,
-                    topBuyers = listOf(
-                        BrokerDetail(brokerCode = "YP", brokerType = "Ritel Domestik", netValueIdr = 8500000000.0, action = "NET_BUY"),
-                        BrokerDetail(brokerCode = "PD", brokerType = "Ritel Domestik", netValueIdr = 6200000000.0, action = "NET_BUY")
-                    ),
-                    topSellers = listOf(
-                        BrokerDetail(brokerCode = "AK", brokerType = "Asing / Institusi", netValueIdr = 14200000000.0, action = "NET_SELL"),
-                        BrokerDetail(brokerCode = "BK", brokerType = "Asing / Institusi", netValueIdr = 7400000000.0, action = "NET_SELL")
-                    ),
-                    summaryVerdict = "Investor Asing net sell tipis, transaksi aktif dikuasai akumulasi ritel"
+                    foreignNetIdr = 0.0,
+                    topBuyers = emptyList(),
+                    topSellers = emptyList(),
+                    summaryVerdict = "-"
                 ),
                 financialHealth = FinancialHealthDetail(
-                    netProfitGrowthYoy = 10.5,
-                    operatingCashFlowIdr = 25000000000000.0,
+                    netProfitGrowthYoy = null,
+                    operatingCashFlowIdr = null,
                     isFca = false,
                     specialNotations = emptyList()
                 )

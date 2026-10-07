@@ -37,6 +37,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import id.tilik.app.ui.components.SkeletonBox
+import id.tilik.app.ui.components.shimmerEffect
 import id.tilik.app.ui.theme.AppCard
 import id.tilik.app.ui.theme.AppGreen
 import id.tilik.app.ui.theme.AppRed
@@ -56,48 +58,11 @@ data class PortfolioStock(
 
 @Composable
 fun PortfolioCarousel(
+    isLoading: Boolean = false,
+    stocks: List<PortfolioStock> = emptyList(),
     onViewDetailsClick: () -> Unit = {},
     onStockClick: (PortfolioStock) -> Unit = {}
 ) {
-    val samplePortfolio = listOf(
-        PortfolioStock(
-            ticker = "AAPL",
-            name = "Apple Inc",
-            price = "$1,788",
-            priceFraction = ".32",
-            changePercent = "5.39%",
-            isPositive = false,
-            points = listOf(0.35f, 0.55f, 0.25f, 0.85f, 0.45f, 0.65f)
-        ),
-        PortfolioStock(
-            ticker = "TSLA",
-            name = "Tesla Inc",
-            price = "$2,388",
-            priceFraction = ".12",
-            changePercent = "3.42%",
-            isPositive = true,
-            points = listOf(0.85f, 0.75f, 0.95f, 0.50f, 0.60f, 0.25f)
-        ),
-        PortfolioStock(
-            ticker = "BBRI",
-            name = "Bank BRI",
-            price = "Rp 5,250",
-            priceFraction = "",
-            changePercent = "2.85%",
-            isPositive = true,
-            points = listOf(0.70f, 0.60f, 0.80f, 0.45f, 0.35f, 0.15f)
-        ),
-        PortfolioStock(
-            ticker = "BBCA",
-            name = "Bank BCA",
-            price = "Rp 10,400",
-            priceFraction = "",
-            changePercent = "1.46%",
-            isPositive = true,
-            points = listOf(0.80f, 0.70f, 0.50f, 0.60f, 0.40f, 0.20f)
-        )
-    )
-
     Column(modifier = Modifier.fillMaxWidth()) {
         // Section Header
         Row(
@@ -108,13 +73,13 @@ fun PortfolioCarousel(
             verticalAlignment = Alignment.Bottom
         ) {
             Text(
-                text = "My Portofolio",
+                text = "Portofolio Saham",
                 color = TextMuted,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium
             )
             Text(
-                text = "View Details >",
+                text = "Lihat Detail >",
                 color = TextPrimary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Normal,
@@ -122,14 +87,80 @@ fun PortfolioCarousel(
             )
         }
 
-        // Horizontal scrolling cards
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            modifier = Modifier.padding(vertical = 4.dp)
-        ) {
-            items(samplePortfolio) { item ->
-                PortfolioCard(stock = item, onClick = { onStockClick(item) })
+        // Horizontal scrolling cards / skeleton
+        if (isLoading) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.padding(vertical = 4.dp)
+            ) {
+                items(3) {
+                    PortfolioStockSkeletonCard()
+                }
             }
+        } else if (stocks.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(130.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(AppCard)
+                    .border(1.dp, Color(0x14FFFFFF), RoundedCornerShape(20.dp))
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "-",
+                        color = TextPrimary,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Belum ada portofolio terhubung",
+                        color = TextMuted,
+                        fontSize = 13.sp
+                    )
+                }
+            }
+        } else {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.padding(vertical = 4.dp)
+            ) {
+                items(stocks) { item ->
+                    PortfolioCard(stock = item, onClick = { onStockClick(item) })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PortfolioStockSkeletonCard() {
+    Box(
+        modifier = Modifier
+            .width(220.dp)
+            .height(180.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(AppCard)
+            .border(1.dp, Color(0x14FFFFFF), RoundedCornerShape(24.dp))
+            .padding(20.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SkeletonBox(modifier = Modifier.size(width = 80.dp, height = 20.dp))
+                SkeletonBox(modifier = Modifier.size(32.dp), shape = CircleShape)
+            }
+            SkeletonBox(modifier = Modifier.size(width = 120.dp, height = 30.dp))
+            SkeletonBox(modifier = Modifier.size(width = 90.dp, height = 22.dp), shape = RoundedCornerShape(percent = 50))
         }
     }
 }

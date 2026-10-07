@@ -28,7 +28,8 @@ class VerificationRepositoryImpl(
 
         val request = VerifyTweetRequest(
             text = text.trim(),
-            sourcePlatform = sourcePlatform
+            sourcePlatform = sourcePlatform,
+            userRole = id.tilik.app.data.session.SessionManager.getUserRole()
         )
 
         return when (val networkResult = remoteDataSource.verifyClaim(request)) {
@@ -38,14 +39,12 @@ class VerificationRepositoryImpl(
             }
             is NetworkResult.Error -> {
                 Timber.tag("TILIK_REPO").w("⚠️ Backend mengembalikan error code ${networkResult.code}: ${networkResult.message}")
-                // Intelligent fallback jika backend mengalami error respon
-                val fallback = createIntelligentFallback(text, detectedTicker, "Server error (${networkResult.code})")
+                val fallback = createFailedResponse(detectedTicker ?: StockKeywordDetector.extractPotentialTicker(text), "Server error (${networkResult.code})")
                 Result.success(fallback)
             }
             is NetworkResult.Exception -> {
                 Timber.tag("TILIK_REPO").e(networkResult.throwable, "❌ Gagal menghubungi backend API: ${networkResult.throwable.message}")
-                // Intelligent fallback jika jaringan offline/timeout agar UI tetap responsif
-                val fallback = createIntelligentFallback(text, detectedTicker, networkResult.throwable.message ?: "Koneksi terputus")
+                val fallback = createFailedResponse(detectedTicker ?: StockKeywordDetector.extractPotentialTicker(text), networkResult.throwable.message ?: "Koneksi terputus")
                 Result.success(fallback)
             }
         }
@@ -59,73 +58,37 @@ class VerificationRepositoryImpl(
         }
     }
 
-    private fun createIntelligentFallback(
-        rawText: String,
+    private fun createFailedResponse(
         detectedTicker: String?,
         reason: String
     ): VerificationResponse {
-        val ticker = detectedTicker?.takeIf { it.isNotBlank() && it != "IDX" }
-            ?: StockKeywordDetector.extractPotentialTicker(rawText)
-            ?: if (rawText.contains("ijo", ignoreCase = true)) "GOTO" else "BBRI"
-        val companyNameMap = mapOf(
-            "BBRI" to "Bank Rakyat Indonesia Tbk",
-            "BBCA" to "Bank Central Asia Tbk",
-            "BMRI" to "Bank Mandiri (Persero) Tbk",
-            "BBNI" to "Bank Negara Indonesia Tbk",
-            "GOTO" to "GoTo Gojek Tokopedia Tbk",
-            "TLKM" to "Telkom Indonesia Tbk",
-            "ASII" to "Astra International Tbk",
-            "AMMN" to "Amman Mineral Internasional Tbk"
-        )
-        val companyName = companyNameMap[ticker] ?: "$ticker Tbk"
+        val ticker = detectedTicker?.takeIf { it.isNotBlank() && it != "IDX" } ?: "-"
 
         return VerificationResponse(
-            status = "fallback ($reason)",
+            status = "failed",
             ticker = ticker,
-            companyName = companyName,
-            verdict = "YELLOW",
-            confidenceScore = 0.88,
-            points = listOf(
-                FactCheckPoint(
-                    title = "Kewajaran Harga Saham",
-                    fact = "Saat ini dihargai 2.4x PBV, berada pada batas atas rata-rata valuasi industri perbankan sejenis.",
-                    isFavorable = false
-                ),
-                FactCheckPoint(
-                    title = "Arus Dana Asing",
-                    fact = "Aliran dana asing tercatat fluktuatif, kenaikan volume perdagangan didorong oleh transaksi ritel domestik.",
-                    isFavorable = false
-                ),
-                FactCheckPoint(
-                    title = "Keamanan & Status Saham",
-                    fact = "Fundamental operasional tetap prima dan saham terbebas dari suspensi maupun pantauan khusus bursa (FCA).",
-                    isFavorable = true
-                )
-            ),
-            coolingOffPrompt = "Tarik napas 5 detik! Perusahaannya solid, tetapi harganya sedang di level premium. Lebih bijak membeli bertahap daripada buru-buru all-in!",
+            companyName = "-",
+            verdict = "-",
+            confidenceScore = 0.0,
+            points = emptyList(),
+            coolingOffPrompt = "-",
             details = ExpandedDetails(
                 valuation = ValuationPeerDetail(
-                    peRatio = 12.8,
-                    pbvRatio = 2.4,
-                    industryMedianPe = 16.5,
-                    industryMedianPbv = 1.8,
-                    valuationStatus = "Valuasi Premium dari Median Industri"
+                    peRatio = null,
+                    pbvRatio = null,
+                    industryMedianPe = null,
+                    industryMedianPbv = null,
+                    valuationStatus = "-"
                 ),
                 brokerFlow = BrokerFlowDetail(
-                    foreignNetIdr = -15400000000.0,
-                    topBuyers = listOf(
-                        BrokerDetail(brokerCode = "YP", brokerType = "Ritel Domestik", netValueIdr = 8500000000.0, action = "NET_BUY"),
-                        BrokerDetail(brokerCode = "PD", brokerType = "Ritel Domestik", netValueIdr = 6200000000.0, action = "NET_BUY")
-                    ),
-                    topSellers = listOf(
-                        BrokerDetail(brokerCode = "AK", brokerType = "Asing / Institusi", netValueIdr = 14200000000.0, action = "NET_SELL"),
-                        BrokerDetail(brokerCode = "BK", brokerType = "Asing / Institusi", netValueIdr = 7400000000.0, action = "NET_SELL")
-                    ),
-                    summaryVerdict = "Investor Asing net sell tipis, transaksi aktif dikuasai akumulasi ritel"
+                    foreignNetIdr = 0.0,
+                    topBuyers = emptyList(),
+                    topSellers = emptyList(),
+                    summaryVerdict = "-"
                 ),
                 financialHealth = FinancialHealthDetail(
-                    netProfitGrowthYoy = 10.5,
-                    operatingCashFlowIdr = 25000000000000.0,
+                    netProfitGrowthYoy = null,
+                    operatingCashFlowIdr = null,
                     isFca = false,
                     specialNotations = emptyList()
                 )

@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Brand Colors -->
-    <color name="brand_primary">#3E44DB</color>
-    <color name="brand_secondary">#8F60FA</color>
-    <color name="brand_dark">#09103B</color>
+    <color name="brand_primary">#FF5C35</color>
+    <color name="brand_secondary">#FFFFFF</color>
+    <color name="brand_dark">#0A0A0A</color>
 
     <!-- Legacy / Semantic Aliases -->
-    <color name="primary">#3E44DB</color>
-    <color name="secondary">#8F60FA</color>
-    <color name="primary_container">#1A1E5C</color>
-    <color name="background">#09103B</color>
-    <color name="surface">#11174B</color>
-    <color name="surface_variant">#1C2363</color>
-    <color name="on_surface">#F4F4F5</color>
-    <color name="on_surface_muted">#A1A1AA</color>
-    <color name="verdict_valid">#10B981</color>
+    <color name="primary">#FF5C35</color>
+    <color name="secondary">#FFFFFF</color>
+    <color name="primary_container">#1A1A1A</color>
+    <color name="background">#0A0A0A</color>
+    <color name="surface">#141414</color>
+    <color name="surface_variant">#1A1A1A</color>
+    <color name="on_surface">#FFFFFF</color>
+    <color name="on_surface_muted">#888888</color>
+    <color name="verdict_valid">#22C55E</color>
     <color name="verdict_misleading">#F59E0B</color>
     <color name="verdict_invalid">#EF4444</color>
 </resources>

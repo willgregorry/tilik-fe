@@ -4,27 +4,24 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <group
-        android:scaleX="0.8"
-        android:scaleY="0.8"
-        android:translateX="10.8"
-        android:translateY="10.8">
-        <!-- Lens Outer Ring -->
+        android:scaleX="0.75"
+        android:scaleY="0.75"
+        android:translateX="13.5"
+        android:translateY="13.5">
+        <!-- Outer Ring -->
         <path
             android:pathData="M54,20 C35.22,20 20,35.22 20,54 C20,72.78 35.22,88 54,88 C72.78,88 88,72.78 88,54 C88,35.22 72.78,20 54,20 Z"
-            android:strokeWidth="6"
-            android:strokeColor="#8F60FA"/>
-        <!-- Center Focus Target / Eye Pupil -->
+            android:strokeWidth="5"
+            android:strokeColor="#FFFFFF"/>
+        <!-- Center Emblem -->
         <path
             android:pathData="M54,54m-12,0a12,12 0 1,1 24,0a12,12 0 1,1 -24,0"
-            android:fillColor="#3E44DB"/>
+            android:fillColor="#FFFFFF"/>
+        <!-- Chart Candlestick Trend -->
         <path
-            android:pathData="M54,54m-6,0a6,6 0 1,1 12,0a6,6 0 1,1 -12,0"
-            android:fillColor="#8F60FA"/>
-        <!-- Chart Candlestick Trend inside Lens -->
-        <path
-            android:pathData="M44,48 L44,60 M54,40 L54,66 M64,46 L64,56"
+            android:pathData="M46,48 L46,60 M54,40 L54,66 M62,46 L62,56"
             android:strokeWidth="2.5"
-            android:strokeColor="#FFFFFF"
+            android:strokeColor="#0A0A0A"
             android:strokeLineCap="round"/>
     </group>
 </vector>

@@ -43,13 +43,15 @@ android {
                 ?: defaultValue
         }
 
-        val envBaseUrl = loadConfigValue("TILIK_BASE_URL", "https://6rlfv87r-8000.asse.devtunnels.ms/")
+        val envBaseUrl = loadConfigValue("TILIK_BASE_URL", "http://localhost:8000/")
         val envSectorsKey = loadConfigValue("SECTORS_API_KEY", "")
         val envGeminiKey = loadConfigValue("GEMINI_API_KEY", "")
+        val envGoogleWebClientId = loadConfigValue("GOOGLE_WEB_CLIENT_ID", "425823470219-igf53v3q6ol9i0r5pfead1r9vg2hhno7.apps.googleusercontent.com")
 
         buildConfigField("String", "BASE_URL", "\"$envBaseUrl\"")
         buildConfigField("String", "SECTORS_API_KEY", "\"$envSectorsKey\"")
         buildConfigField("String", "GEMINI_API_KEY", "\"$envGeminiKey\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$envGoogleWebClientId\"")
     }
 
     buildTypes {
@@ -108,4 +110,5 @@ dependencies {
     implementation("com.jakewharton.timber:timber:5.0.1")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
 }

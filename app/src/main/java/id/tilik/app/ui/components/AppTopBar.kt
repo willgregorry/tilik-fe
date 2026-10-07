@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -45,12 +46,16 @@ import id.tilik.app.ui.theme.AppBackground
 import id.tilik.app.ui.theme.AppCard
 import id.tilik.app.ui.theme.AppRed
 
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+
 @Composable
 fun AppTopBar(
     onProfileClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
-    hasUnreadNotification: Boolean = true,
-    userName: String = "Matthew"
+    hasUnreadNotification: Boolean = false,
+    userName: String = "User",
+    userAvatarUrl: String? = null
 ) {
     Row(
         modifier = Modifier
@@ -74,14 +79,25 @@ fun AppTopBar(
                     .border(1.dp, Color(0x1AFFFFFF), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.favicon),
-                    contentDescription = "Avatar",
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(CircleShape),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                )
+                if (!userAvatarUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = userAvatarUrl,
+                        contentDescription = "Avatar",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.favicon),
+                        contentDescription = "Avatar",
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Fit
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))

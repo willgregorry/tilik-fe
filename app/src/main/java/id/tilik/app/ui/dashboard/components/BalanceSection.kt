@@ -44,10 +44,17 @@ import id.tilik.app.ui.theme.AppGreenBorder
 import id.tilik.app.ui.theme.TextPrimary
 import id.tilik.app.ui.theme.TextSecondary
 
+import id.tilik.app.ui.components.SkeletonBox
+import id.tilik.app.ui.components.shimmerEffect
+
 @Composable
 fun BalanceSection(
     isServiceRunning: Boolean,
     onToggleService: () -> Unit,
+    isLoading: Boolean = false,
+    balanceAmount: String? = null,
+    balanceFraction: String? = null,
+    trendPercent: String? = null,
     modifier: Modifier = Modifier
 ) {
     var isBalanceVisible by remember { mutableStateOf(true) }
@@ -63,7 +70,7 @@ fun BalanceSection(
             modifier = Modifier.padding(bottom = 8.dp)
         ) {
             Text(
-                text = "Total Balance",
+                text = "Total Saldo Portofolio",
                 color = TextSecondary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
@@ -83,45 +90,56 @@ fun BalanceSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                modifier = Modifier.clickable { isBalanceVisible = !isBalanceVisible }
-            ) {
-                if (isBalanceVisible) {
-                    Text(
-                        text = "$ 138,248",
-                        color = TextPrimary,
-                        fontSize = 38.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.5).sp
-                    )
-                    Text(
-                        text = ".58",
-                        color = TextSecondary,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(bottom = 3.dp)
-                    )
-                } else {
-                    Text(
-                        text = "••••••••",
-                        color = TextPrimary,
-                        fontSize = 34.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 2.sp
+            if (isLoading) {
+                SkeletonBox(
+                    modifier = Modifier
+                        .width(180.dp)
+                        .height(42.dp),
+                    shape = RoundedCornerShape(8.dp)
+                )
+            } else {
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    modifier = Modifier.clickable { isBalanceVisible = !isBalanceVisible }
+                ) {
+                    if (isBalanceVisible) {
+                        Text(
+                            text = balanceAmount ?: "-",
+                            color = TextPrimary,
+                            fontSize = 38.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.5).sp
+                        )
+                        if (!balanceFraction.isNullOrBlank()) {
+                            Text(
+                                text = balanceFraction,
+                                color = TextSecondary,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(bottom = 3.dp)
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "••••••••",
+                            color = TextPrimary,
+                            fontSize = 34.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 2.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Icon(
+                        imageVector = if (isBalanceVisible) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
+                        contentDescription = "Toggle Balance",
+                        tint = TextSecondary,
+                        modifier = Modifier
+                            .padding(bottom = 6.dp)
+                            .size(18.dp)
                     )
                 }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Icon(
-                    imageVector = if (isBalanceVisible) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
-                    contentDescription = "Toggle Balance",
-                    tint = TextSecondary,
-                    modifier = Modifier
-                        .padding(bottom = 6.dp)
-                        .size(18.dp)
-                )
             }
 
             // High-contrast circular action button from design
@@ -144,35 +162,44 @@ fun BalanceSection(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Bullish pill badge
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(percent = 50))
-                .background(AppGreenBg)
-                .border(1.dp, AppGreenBorder, RoundedCornerShape(percent = 50))
-                .padding(horizontal = 12.dp, vertical = 6.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Rounded.ArrowUpward,
-                    contentDescription = null,
-                    tint = AppGreen,
-                    modifier = Modifier.size(12.dp)
-                )
-                Spacer(modifier = Modifier.width(5.dp))
-                Text(
-                    text = "16.2%",
-                    color = AppGreen,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = if (isServiceRunning) "Layanan Tilik Aktif" else "In this past month",
-                    color = AppGreen.copy(alpha = 0.75f),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Normal
-                )
+        // Status / Trend pill badge
+        if (isLoading) {
+            SkeletonBox(
+                modifier = Modifier
+                    .width(120.dp)
+                    .height(28.dp),
+                shape = RoundedCornerShape(percent = 50)
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(AppGreenBg)
+                    .border(1.dp, AppGreenBorder, RoundedCornerShape(percent = 50))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Rounded.ArrowUpward,
+                        contentDescription = null,
+                        tint = AppGreen,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text(
+                        text = trendPercent ?: "-",
+                        color = AppGreen,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isServiceRunning) "Layanan Tilik Aktif" else "Layanan Standby",
+                        color = AppGreen.copy(alpha = 0.75f),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
             }
         }
     }

@@ -15,6 +15,12 @@ data class VerificationResponse(
     val verdict: String,
     @SerialName("confidence_score")
     val confidenceScore: Double,
+    @SerialName("user_role")
+    val userRole: UserRole? = null,
+    @SerialName("verdict_title")
+    val verdictTitle: String? = null,
+    @SerialName("summary")
+    val summary: String? = null,
     @SerialName("points")
     val points: List<FactCheckPoint> = emptyList(),
     @SerialName("cooling_off_prompt")
@@ -22,7 +28,9 @@ data class VerificationResponse(
     @SerialName("details")
     val details: ExpandedDetails,
     @SerialName("is_cached")
-    val isCached: Boolean = false
+    val isCached: Boolean = false,
+    @SerialName("history_id")
+    val historyId: String? = null
 ) {
     val verdictLevel: VerdictLevel
         get() = VerdictLevel.fromString(verdict)
