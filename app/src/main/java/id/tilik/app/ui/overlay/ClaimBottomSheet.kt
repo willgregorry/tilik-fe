@@ -83,7 +83,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import id.tilik.app.detection.StockKeywordDetector
-import id.tilik.app.ui.theme.AccentBlue
+import id.tilik.app.ui.theme.BrandPrimary
+import id.tilik.app.ui.theme.BrandSecondary
 import id.tilik.app.ui.theme.DarkSlateBackground
 import id.tilik.app.ui.theme.DarkSlateBorder
 import id.tilik.app.ui.theme.DarkSlateSurface
@@ -94,13 +95,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-// Grammarly-inspired color palette
-private val GrammarlyTeal = Color(0xFF00C49F)
-private val GrammarlyTealDark = Color(0xFF0A221C)
-private val GrammarlySurfaceDark = Color(0xFF181A1D)
-private val GrammarlyCardBg = Color(0xFF202227)
-private val GrammarlyBorder = Color(0xFF2B2E35)
-private val GrammarlySubtext = Color(0xFF9EACB9)
+// Theme Colors matching Beranda & Logo
+private val SheetBackground = Color(0xFFFFFFFF)
+private val SheetCardBg = Color(0xFFF8FAFC)
+private val SheetBorder = Color(0xFFE2E8F0)
+private val BrandIndigo = BrandPrimary
+private val BrandViolet = BrandSecondary
+private val BrandVioletLight = Color(0xFFEEF2FF)
 
 /**
  * Modal Bottom Sheet ala Grammarly yang muncul langsung di atas Threads atau WhatsApp
@@ -396,10 +397,10 @@ fun ClaimBottomSheet(
                     )
                     .offset { IntOffset(0, currentDragOffset.roundToInt()) }
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                    .background(GrammarlySurfaceDark)
+                    .background(SheetBackground)
                     .border(
                         width = 1.dp,
-                        color = GrammarlyBorder,
+                        color = SheetBorder,
                         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                     )
                     .clickable(
@@ -411,7 +412,7 @@ fun ClaimBottomSheet(
                     .navigationBarsPadding()
                     .padding(bottom = 16.dp)
             ) {
-            // Header & Drag Handle Area (Bisa di-drag ke atas untuk memperluas / ke bawah untuk menutup modal sheet)
+            // Header & Drag Handle Area
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -430,7 +431,7 @@ fun ClaimBottomSheet(
                         )
                     }
             ) {
-                // Drag Handle Bar (Grammarly style, tap to toggle expand)
+                // Drag Handle Bar (Clean Neutral, tap to toggle expand)
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
@@ -438,95 +439,59 @@ fun ClaimBottomSheet(
                         .width(if (isExpanded) 54.dp else 42.dp)
                         .height(5.dp)
                         .clip(CircleShape)
-                        .background(if (isExpanded) GrammarlyTeal.copy(alpha = 0.85f) else Color(0xFF4B4F58))
+                        .background(if (isExpanded) BrandViolet else Color(0xFFCBD5E1))
                         .clickable {
                             isExpanded = !isExpanded
                             Timber.tag("TILIK_MONITOR").d("📐 [HANDLE CLICK TOGGLE] isExpanded=$isExpanded")
                         }
                 )
 
-            // Header Section (Grammarly Top Bar)
+            // Header Section
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left: Tilik Brand Emblem
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.foundation.Image(
-                        painter = androidx.compose.ui.res.painterResource(id = id.tilik.app.R.drawable.favicon),
-                        contentDescription = "Tilik Icon",
-                        modifier = Modifier
-                            .size(34.dp)
-                            .clip(CircleShape)
+                // Left: Tilik Logo + Name Asset
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(id = id.tilik.app.R.drawable.logo_name),
+                    contentDescription = "Tilik",
+                    modifier = Modifier.height(36.dp),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                )
+
+                // Right: Close Icon
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFF1F5F9))
+                        .clickable { animateAndDismiss() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = "Tutup",
+                        tint = TextSecondary,
+                        modifier = Modifier.size(18.dp)
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            text = "TILIK AI",
-                            color = Color.White,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            letterSpacing = 1.sp
-                        )
-                        Text(
-                            text = "Sectors Stock Fact-Checker",
-                            color = TextSecondary,
-                            fontSize = 10.sp
-                        )
-                    }
-                }
-
-                // Right: Sparkle AI & Close Icon
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(30.dp)
-                            .clip(CircleShape)
-                            .background(GrammarlyTeal.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.AutoAwesome,
-                            contentDescription = "AI Sparkle",
-                            tint = GrammarlyTeal,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(30.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF26282E))
-                            .clickable { animateAndDismiss() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Close,
-                            contentDescription = "Tutup",
-                            tint = TextSecondary,
-                            modifier = Modifier.size(15.dp)
-                        )
-                    }
                 }
             }
             }
 
-            // Divider Line ala Grammarly
+            // Divider Line
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(GrammarlyBorder)
+                    .background(SheetBorder)
             )
 
-            // Content Area: Empty State ala Grammarly vs Suggestion State
+            // Content Area: Empty State vs Suggestion State
             if (textInput.isBlank()) {
-                // ==================== EMPTY STATE (GRAMMARLY EXACT STYLE) ====================
+                // ==================== EMPTY STATE ====================
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -544,40 +509,45 @@ fun ClaimBottomSheet(
                                 }
                             )
                         }
-                        .padding(horizontal = 24.dp, vertical = 26.dp),
+                        .padding(horizontal = 24.dp, vertical = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    GrammarlyEaselIllustration(
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(54.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFF1F5F9)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = null,
+                            tint = BrandPrimary,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     Text(
-                        text = "No pressure.",
-                        color = Color.White,
-                        fontSize = 20.sp,
+                        text = "Tilik Fakta Saham",
+                        color = TextPrimary,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.5).sp
+                        letterSpacing = (-0.3).sp
                     )
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = "Suggestion will appear here.",
-                        color = GrammarlySubtext,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal
-                    )
-
-                    Spacer(modifier = Modifier.height(18.dp))
-
-                    Text(
-                        text = "Salin teks atau klaim saham dari Threads / WhatsApp untuk menilik fakta bursa secara instan.",
-                        color = TextSecondary.copy(alpha = 0.7f),
-                        fontSize = 11.sp,
+                        text = "Salin teks diskusi saham dari media sosial atau ketik klaim di sini untuk menilik data fundamental dan pergerakan broker asing.",
+                        color = TextSecondary,
+                        fontSize = 12.5.sp,
+                        lineHeight = 18.sp,
                         textAlign = TextAlign.Center
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     // Quick Samples
                     Row(
@@ -586,17 +556,17 @@ fun ClaimBottomSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         SampleChip(
-                            label = "📈 \$BBRI Akumulasi Asing",
+                            label = "BBRI Akumulasi Asing",
                             modifier = Modifier.weight(1f)
                         ) {
-                            textInput = "BBRI asing akumulasi masif ratusan miliar, siap all-time high!"
+                            textInput = "BBRI asing akumulasi masif ratusan miliar, valuasi murah siap all-time high!"
                             isFromClipboard = true
                         }
                         SampleChip(
-                            label = "🚀 \$GOTO Rekor Profit",
+                            label = "GOTO Rekor Laba",
                             modifier = Modifier.weight(1f)
                         ) {
-                            textInput = "GOTO kuartal ini catat rekor profit dan efisiensi operasional!"
+                            textInput = "Si ijo mulai diserok bandar YP, valuasi salah harga to the moon!"
                             isFromClipboard = true
                         }
                     }
@@ -610,8 +580,8 @@ fun ClaimBottomSheet(
                 ) {
                     Card(
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = GrammarlyCardBg),
-                        border = BorderStroke(1.dp, GrammarlyBorder),
+                        colors = CardDefaults.cardColors(containerColor = SheetCardBg),
+                        border = BorderStroke(1.dp, SheetBorder),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
@@ -625,13 +595,13 @@ fun ClaimBottomSheet(
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(6.dp))
-                                            .background(GrammarlyTeal.copy(alpha = 0.15f))
-                                            .border(1.dp, GrammarlyTeal.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
-                                            .padding(horizontal = 8.dp, vertical = 3.5.dp)
+                                            .background(Color(0xFFF1F5F9))
+                                            .border(1.dp, SheetBorder, RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
                                     ) {
                                         Text(
-                                            text = "🎯 EMITEN: \$$detectedTicker",
-                                            color = GrammarlyTeal,
+                                            text = "EMITEN: $$detectedTicker",
+                                            color = BrandPrimary,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = FontFamily.Monospace
@@ -641,12 +611,13 @@ fun ClaimBottomSheet(
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(6.dp))
-                                            .background(AccentBlue.copy(alpha = 0.15f))
-                                            .padding(horizontal = 8.dp, vertical = 3.5.dp)
+                                            .background(Color(0xFFF1F5F9))
+                                            .border(1.dp, SheetBorder, RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
                                     ) {
                                         Text(
-                                            text = "📋 KLAIM TERDETEKSI",
-                                            color = AccentBlue,
+                                            text = "KLAIM DISKUSI",
+                                            color = TextSecondary,
                                             fontSize = 10.5.sp,
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = FontFamily.Monospace
@@ -656,37 +627,37 @@ fun ClaimBottomSheet(
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = if (isExpanded) "Perkecil ⤡" else "Perluas ⤢",
-                                        color = if (isExpanded) GrammarlyTeal else Color(0xFF9EA3AE),
-                                        fontSize = 10.5.sp,
-                                        fontWeight = FontWeight.Medium,
+                                        text = if (isExpanded) "Perkecil" else "Perluas",
+                                        color = BrandPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(4.dp))
                                             .clickable {
                                                 isExpanded = !isExpanded
                                                 Timber.tag("TILIK_MONITOR").d("📐 [TOGGLE EXPAND] Sheet di-toggle -> isExpanded=$isExpanded")
                                             }
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            .padding(horizontal = 6.dp, vertical = 3.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = "Segarkan",
-                                        color = GrammarlyTeal,
-                                        fontSize = 10.5.sp,
-                                        fontWeight = FontWeight.Bold,
+                                        color = BrandPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(4.dp))
                                             .clickable {
                                                 hasUserManuallyEdited = false
                                                 fetchLatestClipboard()
                                             }
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            .padding(horizontal = 6.dp, vertical = 3.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = "Hapus",
                                         color = TextSecondary,
-                                        fontSize = 10.5.sp,
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Normal,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(4.dp))
@@ -695,7 +666,7 @@ fun ClaimBottomSheet(
                                                 isFromClipboard = false
                                                 hasUserManuallyEdited = false
                                             }
-                                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                                            .padding(horizontal = 4.dp, vertical = 3.dp)
                                     )
                                 }
                             }
@@ -716,21 +687,22 @@ fun ClaimBottomSheet(
                                 placeholder = {
                                     Text(
                                         text = "Ketik atau salin klaim saham di sini...",
-                                        color = TextSecondary.copy(alpha = 0.5f),
-                                        fontSize = 12.5.sp
+                                        color = TextSecondary.copy(alpha = 0.6f),
+                                        fontSize = 13.sp
                                     )
                                 },
-                                minLines = if (isExpanded) 7 else 2,
-                                maxLines = if (isExpanded) 14 else 5,
+                                minLines = if (isExpanded) 7 else 3,
+                                maxLines = if (isExpanded) 14 else 6,
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedTextColor = TextPrimary,
                                     unfocusedTextColor = TextPrimary,
-                                    focusedContainerColor = Color(0xFF16171A),
-                                    unfocusedContainerColor = Color(0xFF16171A),
-                                    focusedBorderColor = GrammarlyTeal,
-                                    unfocusedBorderColor = GrammarlyBorder
+                                    focusedContainerColor = Color.White,
+                                    unfocusedContainerColor = Color.White,
+                                    focusedBorderColor = BrandPrimary,
+                                    unfocusedBorderColor = Color(0xFFCBD5E1),
+                                    cursorColor = BrandPrimary
                                 ),
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .animateContentSize()
@@ -740,7 +712,7 @@ fun ClaimBottomSheet(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Primary CTA Button (Grammarly pill button)
+                    // Primary CTA Button
                     Button(
                         onClick = {
                             if (textInput.isNotBlank()) {
@@ -749,10 +721,12 @@ fun ClaimBottomSheet(
                         },
                         enabled = textInput.isNotBlank(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = GrammarlyTeal,
-                            contentColor = GrammarlyTealDark
+                            containerColor = BrandPrimary,
+                            contentColor = Color.White,
+                            disabledContainerColor = Color(0xFFF1F5F9),
+                            disabledContentColor = Color(0xFF94A3B8)
                         ),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
@@ -772,13 +746,13 @@ fun ClaimBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Hint dismiss
             Text(
-                text = "Ketuk area gelap di atas untuk menutup / meminimize",
-                color = TextSecondary.copy(alpha = 0.5f),
-                fontSize = 10.sp,
+                text = "Ketuk area di luar untuk menutup",
+                color = TextSecondary.copy(alpha = 0.7f),
+                fontSize = 11.sp,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .clickable { animateAndDismiss() }
@@ -786,129 +760,6 @@ fun ClaimBottomSheet(
         }
     }
 }
-}
-
-/**
- * Pixel-perfect vector canvas & easel illustration matching Grammarly's empty state.
- */
-@Composable
-private fun GrammarlyEaselIllustration(
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier.size(width = 130.dp, height = 115.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val w = size.width
-            val h = size.height
-
-            val easelWood = Color(0xFFECA199)
-            val easelWoodDark = Color(0xFFD47C70)
-
-            // Back leg of easel
-            drawLine(
-                color = easelWoodDark,
-                start = Offset(w * 0.5f, h * 0.05f),
-                end = Offset(w * 0.5f, h * 0.95f),
-                strokeWidth = 5.dp.toPx(),
-                cap = StrokeCap.Round
-            )
-
-            // Left leg
-            drawLine(
-                color = easelWood,
-                start = Offset(w * 0.48f, h * 0.08f),
-                end = Offset(w * 0.22f, h * 0.98f),
-                strokeWidth = 6.dp.toPx(),
-                cap = StrokeCap.Round
-            )
-
-            // Right leg
-            drawLine(
-                color = easelWood,
-                start = Offset(w * 0.52f, h * 0.08f),
-                end = Offset(w * 0.78f, h * 0.98f),
-                strokeWidth = 6.dp.toPx(),
-                cap = StrokeCap.Round
-            )
-
-            // Canvas Board (white rectangle with rounded corners)
-            val canvasLeft = w * 0.22f
-            val canvasTop = h * 0.15f
-            val canvasWidth = w * 0.56f
-            val canvasHeight = h * 0.50f
-
-            drawRoundRect(
-                color = Color.White,
-                topLeft = Offset(canvasLeft, canvasTop),
-                size = Size(canvasWidth, canvasHeight),
-                cornerRadius = CornerRadius(6.dp.toPx())
-            )
-
-            // Subtle border on canvas
-            drawRoundRect(
-                color = Color(0xFF333333),
-                topLeft = Offset(canvasLeft, canvasTop),
-                size = Size(canvasWidth, canvasHeight),
-                cornerRadius = CornerRadius(6.dp.toPx()),
-                style = Stroke(width = 1.2.dp.toPx())
-            )
-
-            // Soft blue sky shape inside canvas
-            drawRoundRect(
-                color = Color(0xFFE0F2FE),
-                topLeft = Offset(canvasLeft + 3.dp.toPx(), canvasTop + 3.dp.toPx()),
-                size = Size(canvasWidth - 6.dp.toPx(), canvasHeight * 0.62f),
-                cornerRadius = CornerRadius(4.dp.toPx())
-            )
-
-            // Paintbrush on canvas
-            // Blue handle
-            drawLine(
-                color = Color(0xFF38BDF8),
-                start = Offset(canvasLeft + canvasWidth * 0.76f, canvasTop + canvasHeight * 0.14f),
-                end = Offset(canvasLeft + canvasWidth * 0.48f, canvasTop + canvasHeight * 0.54f),
-                strokeWidth = 5.dp.toPx(),
-                cap = StrokeCap.Round
-            )
-            // Silver ferrule
-            drawLine(
-                color = Color(0xFF94A3B8),
-                start = Offset(canvasLeft + canvasWidth * 0.48f, canvasTop + canvasHeight * 0.54f),
-                end = Offset(canvasLeft + canvasWidth * 0.42f, canvasTop + canvasHeight * 0.63f),
-                strokeWidth = 6.dp.toPx(),
-                cap = StrokeCap.Round
-            )
-            // Green/Teal dipped brush tip
-            drawLine(
-                color = Color(0xFF10B981),
-                start = Offset(canvasLeft + canvasWidth * 0.42f, canvasTop + canvasHeight * 0.63f),
-                end = Offset(canvasLeft + canvasWidth * 0.34f, canvasTop + canvasHeight * 0.75f),
-                strokeWidth = 8.dp.toPx(),
-                cap = StrokeCap.Round
-            )
-
-            // Horizontal easel shelf
-            val shelfY = canvasTop + canvasHeight
-            drawLine(
-                color = easelWood,
-                start = Offset(w * 0.16f, shelfY),
-                end = Offset(w * 0.84f, shelfY),
-                strokeWidth = 7.dp.toPx(),
-                cap = StrokeCap.Round
-            )
-
-            // Lower horizontal brace
-            drawLine(
-                color = easelWoodDark,
-                start = Offset(w * 0.28f, h * 0.84f),
-                end = Offset(w * 0.72f, h * 0.84f),
-                strokeWidth = 4.dp.toPx(),
-                cap = StrokeCap.Round
-            )
-        }
-    }
 }
 
 @Composable
@@ -920,16 +771,16 @@ private fun SampleChip(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF22242A))
-            .border(0.8.dp, GrammarlyBorder, RoundedCornerShape(8.dp))
+            .background(Color(0xFFF1F5F9))
+            .border(1.dp, SheetBorder, RoundedCornerShape(8.dp))
             .clickable { onClick() }
-            .padding(horizontal = 10.dp, vertical = 7.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = label,
             color = TextPrimary,
-            fontSize = 10.5.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1
         )

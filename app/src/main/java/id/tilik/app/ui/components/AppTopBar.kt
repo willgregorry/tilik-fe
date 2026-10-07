@@ -50,34 +50,13 @@ fun AppTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Left side: App Logo & Identity
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.logo),
-                contentDescription = "Tilik Logo",
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(10.dp))
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = "Tilik",
-                    color = TextPrimary,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.3).sp
-                )
-                Text(
-                    text = "Pemeriksa Fakta Saham",
-                    color = TextSecondary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
+        // Left side: App Logo & Name Asset
+        Image(
+            painter = painterResource(id = R.drawable.logo_name),
+            contentDescription = "Tilik",
+            modifier = Modifier.height(36.dp),
+            contentScale = androidx.compose.ui.layout.ContentScale.Fit
+        )
 
         // Right side: Clean User Profile Avatar
         Box(

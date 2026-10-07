@@ -45,8 +45,34 @@ object StockKeywordDetector {
         "analisis", "rekomendasi", "target price"
     )
 
+    private val slangStockMap = mapOf(
+        "si ijo" to "GOTO",
+        "si hijau" to "GOTO",
+        "si merah" to "TLKM",
+        "si biru" to "BBCA",
+        "si kuning" to "ISAT",
+        "bank rakyat" to "BBRI",
+        "bank bca" to "BBCA",
+        "bank mandiri" to "BMRI",
+        "bank bni" to "BBNI",
+        "telkom" to "TLKM",
+        "astra" to "ASII",
+        "amman" to "AMMN",
+        "adaro" to "ADRO",
+        "antam" to "ANTM"
+    )
+
     fun extractPotentialTicker(text: String): String? {
-        // 1. Prioritaskan cashtags seperti $BBRI atau #BBRI yang lazim di Threads / Stockbit
+        val lower = text.lowercase()
+
+        // 1. Cek istilah/slang populer bursa saham (misal: "si ijo" -> GOTO)
+        for ((slang, ticker) in slangStockMap) {
+            if (lower.contains(slang)) {
+                return ticker
+            }
+        }
+
+        // 2. Prioritaskan cashtags seperti $BBRI atau #BBRI yang lazim di Threads / Stockbit
         val cashMatch = cashtagRegex.find(text)
         if (cashMatch != null) {
             val candidate = cashMatch.groupValues[1].uppercase()
@@ -55,7 +81,7 @@ object StockKeywordDetector {
             }
         }
 
-        // 2. Cek daftar emiten populer IDX secara case-insensitive (misal: "saham bbri" atau "goto")
+        // 3. Cek daftar emiten populer IDX secara case-insensitive (misal: "saham bbri" atau "goto")
         val words = text.split(Regex("""[^A-Za-z0-9]""")).filter { it.isNotBlank() }
         for (word in words) {
             val upper = word.uppercase()

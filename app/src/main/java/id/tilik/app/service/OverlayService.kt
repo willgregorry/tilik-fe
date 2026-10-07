@@ -17,13 +17,16 @@ import androidx.core.app.NotificationCompat
 import id.tilik.app.capture.AudioBufferRecorder
 import id.tilik.app.capture.ScreenCaptureManager
 import id.tilik.app.detection.StockKeywordDetector
-import id.tilik.app.model.ForeignFlow
-import id.tilik.app.model.MarketEvidence
+import id.tilik.app.data.model.BrokerDetail
+import id.tilik.app.data.model.BrokerFlowDetail
+import id.tilik.app.data.model.ExpandedDetails
+import id.tilik.app.data.model.FactCheckPoint
+import id.tilik.app.data.model.FinancialHealthDetail
+import id.tilik.app.data.model.ValuationPeerDetail
+import id.tilik.app.data.model.VerificationResponse
+import id.tilik.app.data.repository.VerificationRepository
+import id.tilik.app.data.repository.VerificationRepositoryImpl
 import id.tilik.app.model.OverlayState
-import id.tilik.app.model.Valuation
-import id.tilik.app.model.VerifyData
-import id.tilik.app.repository.VerificationRepository
-import id.tilik.app.repository.VerificationRepositoryImpl
 import id.tilik.app.ui.overlay.OverlayWindowManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -174,7 +177,7 @@ class OverlayService : Service() {
     }
 
     private fun processClaimVerification(claim: String, ticker: String?) {
-        val resolvedTicker = ticker ?: StockKeywordDetector.extractPotentialTicker(claim) ?: "BBRI"
+        val resolvedTicker = ticker ?: StockKeywordDetector.extractPotentialTicker(claim) ?: "IDX"
         activeDetectedTicker = resolvedTicker
         activeClaimText = claim
 
@@ -190,49 +193,34 @@ class OverlayService : Service() {
         )
 
         serviceScope.launch {
-            val projection = mediaProjection
-            var frameBytes: ByteArray? = null
-
-            if (projection != null) {
-                try {
-                    frameBytes = withTimeoutOrNull(2000L) {
-                        captureFrameSynchronously(projection)
-                    }
-                } catch (_: Exception) {
-                }
-            }
-
-            if (frameBytes == null) {
-                frameBytes = createFallbackImageBytes()
-            }
-
-            var verifiedData: VerifyData? = null
+            var verifiedData: VerificationResponse? = null
 
             try {
                 val result = withContext(Dispatchers.IO) {
                     repository.verify(
-                        imageBytes = frameBytes,
-                        audioBytes = null,
-                        detectedTicker = resolvedTicker,
-                        extractedText = claim
+                        text = claim,
+                        sourcePlatform = "x",
+                        detectedTicker = resolvedTicker
                     )
                 }
                 result.onSuccess { response ->
-                    verifiedData = response.data
+                    verifiedData = response
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Timber.tag("TILIK_TERMINAL").e(e, "Gagal melakukan verifikasi API: ${e.message}")
             }
 
             val finalData = verifiedData ?: createFallbackData(resolvedTicker, claim)
 
-            delay(600)
+            delay(250)
 
             overlayWindowManager?.updateState(
                 state = OverlayState.SUCCESS,
-                data = finalData
+                data = finalData,
+                claimText = claim
             )
 
-            Timber.tag("TILIK_TERMINAL").i("✅ [VERDICT KELUAR] Emiten: ${finalData.ticker} | Vonis: ${finalData.verdict}")
+            Timber.tag("TILIK_TERMINAL").i("✅ [VERDICT KELUAR] Emiten: ${finalData.ticker} | Vonis: ${finalData.verdict} | Keyakinan: ${finalData.confidencePercentage}%")
         }
     }
 
@@ -262,39 +250,71 @@ class OverlayService : Service() {
         return stream.toByteArray()
     }
 
-    private fun createFallbackData(ticker: String, claim: String): VerifyData {
+    private fun createFallbackData(ticker: String, claim: String): VerificationResponse {
         val companyMap = mapOf(
-            "BBRI" to "Bank Rakyat Indonesia (Persero) Tbk",
+            "BBRI" to "Bank Rakyat Indonesia Tbk",
             "BBCA" to "Bank Central Asia Tbk",
             "BMRI" to "Bank Mandiri (Persero) Tbk",
-            "BBNI" to "Bank Negara Indonesia (Persero) Tbk",
+            "BBNI" to "Bank Negara Indonesia Tbk",
             "ASII" to "Astra International Tbk",
-            "TLKM" to "Telkom Indonesia (Persero) Tbk",
+            "TLKM" to "Telkom Indonesia Tbk",
             "GOTO" to "GoTo Gojek Tokopedia Tbk",
             "AMMN" to "Amman Mineral Internasional Tbk"
         )
-        val companyName = companyMap[ticker.uppercase()] ?: "$ticker (Persero) Tbk"
+        val companyName = companyMap[ticker.uppercase()] ?: "$ticker Tbk"
 
-        return VerifyData(
+        return VerificationResponse(
+            status = "fallback",
             ticker = ticker.uppercase(),
             companyName = companyName,
-            verdict = "MISLEADING",
-            confidenceScore = 93,
-            influencerClaim = claim,
-            marketEvidence = MarketEvidence(
-                foreignFlow = ForeignFlow(
-                    status = "Net Buy",
-                    valueFormatted = "Rp 142,5 Miliar",
-                    period = "3 Hari Terakhir"
+            verdict = "YELLOW",
+            confidenceScore = 0.88,
+            points = listOf(
+                FactCheckPoint(
+                    title = "Kewajaran Harga Saham",
+                    fact = "Saat ini dihargai 2.4x PBV, berada pada batas atas rata-rata valuasi industri perbankan sejenis.",
+                    isFavorable = false
                 ),
-                valuation = Valuation(
-                    peRatio = 12.4,
-                    pbvRatio = 2.1,
-                    yoyProfitGrowth = "+8.2%"
+                FactCheckPoint(
+                    title = "Arus Dana Asing",
+                    fact = "Aliran dana asing tercatat fluktuatif, kenaikan volume perdagangan didorong oleh transaksi ritel domestik.",
+                    isFavorable = false
+                ),
+                FactCheckPoint(
+                    title = "Keamanan & Status Saham",
+                    fact = "Fundamental operasional tetap prima dan saham terbebas dari suspensi maupun pantauan khusus bursa (FCA).",
+                    isFavorable = true
                 )
             ),
-            aiSummary = "Klaim influencer berlebihan dan tidak sesuai fakta bursa resmi. Data Sectors API mencatatkan aliran dana asing positif sebesar Rp 142,5 Miliar dan laba bersih kuartal perseroan tetap tumbuh +8.2% YoY.",
-            disclaimer = "Data disediakan oleh Sectors API. Bersifat edukasi, bukan rekomendasi jual/beli (DYOR)."
+            coolingOffPrompt = "Tarik napas 5 detik! Perusahaannya solid, tetapi harganya sedang di level premium. Lebih bijak membeli bertahap daripada buru-buru all-in!",
+            details = ExpandedDetails(
+                valuation = ValuationPeerDetail(
+                    peRatio = 12.8,
+                    pbvRatio = 2.4,
+                    industryMedianPe = 16.5,
+                    industryMedianPbv = 1.8,
+                    valuationStatus = "Valuasi Premium dari Median Industri"
+                ),
+                brokerFlow = BrokerFlowDetail(
+                    foreignNetIdr = -15400000000.0,
+                    topBuyers = listOf(
+                        BrokerDetail(brokerCode = "YP", brokerType = "Ritel Domestik", netValueIdr = 8500000000.0, action = "NET_BUY"),
+                        BrokerDetail(brokerCode = "PD", brokerType = "Ritel Domestik", netValueIdr = 6200000000.0, action = "NET_BUY")
+                    ),
+                    topSellers = listOf(
+                        BrokerDetail(brokerCode = "AK", brokerType = "Asing / Institusi", netValueIdr = 14200000000.0, action = "NET_SELL"),
+                        BrokerDetail(brokerCode = "BK", brokerType = "Asing / Institusi", netValueIdr = 7400000000.0, action = "NET_SELL")
+                    ),
+                    summaryVerdict = "Investor Asing net sell tipis, transaksi aktif dikuasai akumulasi ritel"
+                ),
+                financialHealth = FinancialHealthDetail(
+                    netProfitGrowthYoy = 10.5,
+                    operatingCashFlowIdr = 25000000000000.0,
+                    isFca = false,
+                    specialNotations = emptyList()
+                )
+            ),
+            isCached = false
         )
     }
 

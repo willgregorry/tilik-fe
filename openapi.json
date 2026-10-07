@@ -1,0 +1,545 @@
+﻿{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Tilik AI Backend",
+        "description": "Tilik AI â In-Context Financial Fact-Checker \u0026 Slang RAG Engine for IDX Stocks",
+        "version": "2.0.0"
+    },
+    "paths": {
+        "/api/v1/verify": {
+            "post": {
+                "summary": "Verify Social Media Stock Tweet",
+                "description": "Fact-checks claims from social media stock posts using Sectors API v2 and Slang RAG.",
+                "operationId": "verify_tweet_api_v1_verify_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/VerifyTweetRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/VerificationResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/health": {
+            "get": {
+                "summary": "System Health \u0026 Connectivity Status",
+                "description": "Checks operational status of Tilik AI backend, RAG store, Gemini, and Sectors API.",
+                "operationId": "get_health_api_v1_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Root Health Check",
+                "description": "Convenience shortcut to the system health check.",
+                "operationId": "root_health_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/": {
+            "get": {
+                "tags": [
+                    "Root"
+                ],
+                "summary": "Root Info",
+                "description": "Returns basic application info.",
+                "operationId": "root__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "BrokerDetail": {
+                "properties": {
+                    "broker_code": {
+                        "type": "string",
+                        "title": "Broker Code",
+                        "example": "YP"
+                    },
+                    "broker_type": {
+                        "type": "string",
+                        "title": "Broker Type",
+                        "example": "Ritel Domestik | Asing"
+                    },
+                    "net_value_idr": {
+                        "type": "number",
+                        "title": "Net Value Idr",
+                        "description": "Nilai transaksi bersih dalam Rupiah"
+                    },
+                    "action": {
+                        "type": "string",
+                        "title": "Action",
+                        "example": "NET_BUY | NET_SELL"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "broker_code",
+                    "broker_type",
+                    "net_value_idr",
+                    "action"
+                ],
+                "title": "BrokerDetail"
+            },
+            "BrokerFlowDetail": {
+                "properties": {
+                    "foreign_net_idr": {
+                        "type": "number",
+                        "title": "Foreign Net Idr",
+                        "description": "Total akumulasi bersih asing hari ini"
+                    },
+                    "top_buyers": {
+                        "items": {
+                            "$ref": "#/components/schemas/BrokerDetail"
+                        },
+                        "type": "array",
+                        "title": "Top Buyers"
+                    },
+                    "top_sellers": {
+                        "items": {
+                            "$ref": "#/components/schemas/BrokerDetail"
+                        },
+                        "type": "array",
+                        "title": "Top Sellers"
+                    },
+                    "summary_verdict": {
+                        "type": "string",
+                        "title": "Summary Verdict",
+                        "example": "Asing net sell Rp 12M, pembeli didominasi ritel"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "foreign_net_idr",
+                    "summary_verdict"
+                ],
+                "title": "BrokerFlowDetail"
+            },
+            "ExpandedDetails": {
+                "properties": {
+                    "valuation": {
+                        "$ref": "#/components/schemas/ValuationPeerDetail"
+                    },
+                    "broker_flow": {
+                        "$ref": "#/components/schemas/BrokerFlowDetail"
+                    },
+                    "financial_health": {
+                        "$ref": "#/components/schemas/FinancialHealthDetail"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "valuation",
+                    "broker_flow",
+                    "financial_health"
+                ],
+                "title": "ExpandedDetails"
+            },
+            "FactCheckPoint": {
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "title": "Title",
+                        "description": "Parameter fakta, misal: \u0027Valuasi PER\u0027"
+                    },
+                    "fact": {
+                        "type": "string",
+                        "maxLength": 150,
+                        "title": "Fact",
+                        "description": "Uraian komparasi data, maks 25 kata"
+                    },
+                    "is_favorable": {
+                        "type": "boolean",
+                        "title": "Is Favorable",
+                        "description": "True jika mendukung fundamental sehat"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "title",
+                    "fact",
+                    "is_favorable"
+                ],
+                "title": "FactCheckPoint"
+            },
+            "FinancialHealthDetail": {
+                "properties": {
+                    "net_profit_growth_yoy": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Net Profit Growth Yoy",
+                        "description": "Pertumbuhan laba bersih YoY (%)"
+                    },
+                    "operating_cash_flow_idr": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Operating Cash Flow Idr",
+                        "description": "Arus kas operasional"
+                    },
+                    "is_fca": {
+                        "type": "boolean",
+                        "title": "Is Fca",
+                        "description": "True jika masuk Papan Pemantauan Khusus"
+                    },
+                    "special_notations": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Special Notations",
+                        "description": "Daftar tato bursa, misal: [\u0027X\u0027]"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "is_fca"
+                ],
+                "title": "FinancialHealthDetail"
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "HealthResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "default": "healthy",
+                        "example": "healthy"
+                    },
+                    "app_name": {
+                        "type": "string",
+                        "title": "App Name",
+                        "default": "Tilik AI Backend",
+                        "example": "Tilik AI Backend"
+                    },
+                    "version": {
+                        "type": "string",
+                        "title": "Version",
+                        "default": "2.0.0",
+                        "example": "2.0.0"
+                    },
+                    "gemini_api": {
+                        "type": "string",
+                        "title": "Gemini Api",
+                        "default": "connected",
+                        "example": "connected"
+                    },
+                    "sectors_api": {
+                        "type": "string",
+                        "title": "Sectors Api",
+                        "default": "connected",
+                        "example": "connected"
+                    },
+                    "slang_rag_records": {
+                        "type": "integer",
+                        "title": "Slang Rag Records",
+                        "default": 0,
+                        "example": 52
+                    }
+                },
+                "type": "object",
+                "title": "HealthResponse"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    },
+                    "input": {
+                        "title": "Input"
+                    },
+                    "ctx": {
+                        "type": "object",
+                        "title": "Context"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            },
+            "ValuationPeerDetail": {
+                "properties": {
+                    "pe_ratio": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Pe Ratio",
+                        "description": "Price to Earnings Ratio emiten"
+                    },
+                    "pbv_ratio": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Pbv Ratio",
+                        "description": "Price to Book Value Ratio emiten"
+                    },
+                    "industry_median_pe": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Industry Median Pe",
+                        "description": "Median PE industri sejenis"
+                    },
+                    "industry_median_pbv": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Industry Median Pbv",
+                        "description": "Median PBV industri sejenis"
+                    },
+                    "valuation_status": {
+                        "type": "string",
+                        "title": "Valuation Status",
+                        "example": "45% Lebih Mahal dari Sektor"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "valuation_status"
+                ],
+                "title": "ValuationPeerDetail"
+            },
+            "VerdictLevel": {
+                "type": "string",
+                "enum": [
+                    "RED",
+                    "YELLOW",
+                    "GREEN"
+                ],
+                "title": "VerdictLevel",
+                "description": "Traffic light verdict status."
+            },
+            "VerificationResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "default": "success",
+                        "example": "success"
+                    },
+                    "ticker": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Ticker",
+                        "example": "GOTO"
+                    },
+                    "company_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Company Name",
+                        "example": "GoTo Gojek Tokopedia Tbk"
+                    },
+                    "verdict": {
+                        "$ref": "#/components/schemas/VerdictLevel",
+                        "description": "Status lampu lalu lintas"
+                    },
+                    "confidence_score": {
+                        "type": "number",
+                        "maximum": 1.0,
+                        "minimum": 0.0,
+                        "title": "Confidence Score",
+                        "example": 0.94
+                    },
+                    "points": {
+                        "items": {
+                            "$ref": "#/components/schemas/FactCheckPoint"
+                        },
+                        "type": "array",
+                        "maxItems": 3,
+                        "minItems": 1,
+                        "title": "Points"
+                    },
+                    "cooling_off_prompt": {
+                        "type": "string",
+                        "title": "Cooling Off Prompt",
+                        "example": "Tarik napas 5 detik! Yakin membeli karena analisa atau takut tertinggal harga?"
+                    },
+                    "details": {
+                        "$ref": "#/components/schemas/ExpandedDetails"
+                    },
+                    "is_cached": {
+                        "type": "boolean",
+                        "title": "Is Cached",
+                        "default": false
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "verdict",
+                    "confidence_score",
+                    "points",
+                    "cooling_off_prompt",
+                    "details"
+                ],
+                "title": "VerificationResponse"
+            },
+            "VerifyTweetRequest": {
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "maxLength": 1000,
+                        "minLength": 5,
+                        "title": "Text",
+                        "example": "Si ijo mulai diserok bandar YP, valuasi salah harga to the moon!"
+                    },
+                    "source_platform": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Source Platform",
+                        "default": "x",
+                        "example": "x | threads | telegram"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "text"
+                ],
+                "title": "VerifyTweetRequest"
+            }
+        }
+    }
+}

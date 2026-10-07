@@ -223,19 +223,57 @@ Khusus di HP Android dengan sistem keamanan seperti **OriginOS (Vivo)** atau **H
 
 ---
 
-## 🔍 Logcat Monitoring (Opsional)
-Jika Anda membuka terminal di laptop saat menguji, Anda bisa melihat log proses secara live:
-```powershell
-adb logcat -s TILIK_MONITOR,TILIK_TERMINAL
-```
-Log akan menampilkan:
-- `🔼 [DRAG UP EXPAND] Sheet ditarik ke atas -> Mode Lebih Tinggi (Expanded)`
-- `🔽 [DRAG DOWN COLLAPSE] Sheet ditarik ke bawah -> Kembali ke ukuran standar`
-- `👇 [DRAG DOWN DISMISS] Sheet ditarik ke bawah -> Menutup sheet`
-- `📜 [AUTO EXPAND] Teks panjang terdeteksi -> Memperluas sheet lebih tinggi`
-- `📐 [TOGGLE EXPAND] Sheet di-toggle -> isExpanded=...`
+---
 
+### Skenario 13: Uji Hasil Pemeriksaan Fakta Bursa (Verdict Bottom Sheet ala OVO & GoPay)
+Skenario ini menguji penyajian hasil pemeriksaan fakta saham bergaya modern fintech (seperti OVO & GoPay) yang bersih, lega, bebas dari "AI slop", dan nyaman dibaca (scrollable):
+1. **Langkah Persiapan:**
+   - Backend FastAPI berjalan di laptop pada port 8000.
+   - Dual-host fallback aktif (koneksi otomatis melalui Wi-Fi LAN IP http://10.110.120.199:8000/ atau adb reverse tcp:8000 tcp:8000).
+2. **Uji Periksa Klaim Saham:**
+   - Di aplikasi Threads, WhatsApp, atau ketik langsung di Claim Bottom Sheet Tilik, salin/ketik teks:
+     > *"BBRI asing kabur jualan terus ratusan miliar, harga saham overvalued dan mau anjlok!"*
+     atau
+     > *"Si ijo mulai diserok bandar YP, valuasi salah harga to the moon!"*
+   - Ketuk tombol ungu **"Periksa Fakta di Sectors API"**.
+   - **Hasil yang Diharapkan:**
+     - Bubble melayang berubah menjadi kapsul putih bersih berborder ungu dengan tulisan *"Menilik bursa..."* yang kontras dan jelas (tidak ada teks gelap di background gelap).
+     - Begitu data bursa diterima, muncul **Bottom Sheet Hasil Pemeriksaan Fakta** setinggi ~86% layar dengan background putih bersih (`#FFFFFF`):
+       - **Header Atas**: Kode ticker bersih (misal `BBRI` atau `GOTO` dalam badge ungu lembut tanpa emoji), nama emiten (`Bank Rakyat Indonesia Tbk`), dan tombol bulat 'X' di kanan.
+       - **Hero Status Banner (ala GoPay / OVO)**: Kartu status berlatar pastel elegan dengan ikon status bersih (`CheckCircle`, `WarningAmber`, atau `Warning`), judul vonis bursa (*"Klaim Terverifikasi Sesuai Data"* / *"Klaim Perlu Diwaspadai"* / *"Klaim Berpotensi Menyesatkan"*), chip akurasi analisis (`Akurasi 92%`), dan catatan analisis berbahasa Indonesia yang jernih dan nyaman dibaca.
+       - **Klaim yang Dianalisis**: Kutipan teks yang diuji dalam kartu slate bersih.
+       - **Pemeriksaan Fakta**: Poin-poin verifikasi terpisah rapi dengan ikon indikator jelas (hijau/merah) dan teks penjelasan yang lega (13.5sp, tidak berdesakan).
+       - **Data Pasar & Finansial**:
+         - *Arus Modal Asing*: Nilai Foreign Net IDR tebal (e.g. `+Rp 9,8 Miliar` hijau / `-Rp 15,2 Miliar` merah), ringkasan flow, dan perbandingan broker Top Buyers vs Top Sellers.
+         - *Valuasi Saham*: Nilai PBV & PER vs Median Industri beserta tag status valuasi.
+         - *Kesehatan Finansial & Notasi*: Pertumbuhan laba YoY, arus kas operasi, status papan FCA, dan notasi khusus BEI.
+       - **Footer & Tombol Aksi**: Di bagian paling bawah sheet terdapat tombol utama berwarna ungu **"Tutup"** yang selalu *pinned* dan mudah dijangkau satu jempol.
+3. **Uji Kemudahan Membaca (*Scrollable*):**
+   - Geser layar naik-turun pada area konten.
+   - **Hasil yang Diharapkan:** Halaman dapat di-*scroll* dengan sangat halus dan lega. Teks tidak dipadatkan ke dalam kotak kecil berukuran mini, melainkan berukuran 13–16sp yang sangat nyaman dibaca.
+4. **Uji Gestur Menutup Sheet:**
+   - Ketuk tombol **"Tutup"** di bawah, ATAU geser (*swipe down*) drag handle di bagian atas sheet, ATAU ketuk area gelap (scrim) di luar sheet.
+   - **Hasil yang Diharapkan:** Sheet menutup seketika dan kembali ke floating bubble melayang.
 
+---
 
-
-
+### Skenario 14: Uji Tampilan Layout Lega Bebas Desak-Desakan (Un-Cramped Fintech Layout)
+Skenario ini memverifikasi bahwa seluruh data bursa di Bottom Sheet hasil tampil lega, rapi, dan tidak ada teks yang terpotong/terdesak:
+1. **Periksa Kartu Arus Modal Asing (Top Buyers & Top Sellers):**
+   - Perhatikan bagian daftar broker *Top Buyers* dan *Top Sellers*.
+   - **Hasil yang Diharapkan:**
+     - **TIDAK ADA LAGI** teks nilai rupiah yang terpotong menjadi 2 baris (misal `"Rp 24,1"` di baris atas dan `"Miliar"` di baris bawah).
+     - Setiap broker ditampilkan dalam **satu baris penuh (full width)** yang terpisah:
+       - Di kiri: Badge kode broker (misal `BK`, `YP`, `MG`) dengan teks tipe broker (`Asing` warna biru / `Domestik` warna abu-abu).
+       - Di kanan: Nilai transaksi lengkap dalam satu baris monospaced tebal (misal `+Rp 15,2 Miliar` hijau atau `-Rp 24,1 Miliar` merah).
+2. **Periksa Kartu Valuasi Saham:**
+   - Perhatikan judul *"Valuasi Saham"* dan kotak rasio metrik.
+   - **Hasil yang Diharapkan:**
+     - Judul *"Valuasi Saham"* berdiri sendiri dengan bersih di kiri atas kartu.
+     - **TIDAK ADA LAGI** badge kuning panjang yang dipaksa sempit di sebelah kanan judul.
+     - Dua kotak rasio metrik (`PBV Ratio` dan `PER Ratio`) tampil lega bersanding dengan angka tebal besar (`2,4x`) dan keterangan perbandingan (`Median Sektor: 1,6x`).
+     - Keterangan status valuasi (misal *"Harga Premium (45.5% Lebih Tinggi dari Rata-Rata Industri)"*) ditampilkan sebagai **banner callout lebar penuh** di bawah kotak metrik sehingga kalimat panjang dapat dibaca secara alami dan santai.
+3. **Periksa Jarak Bawah (*Bottom Clearance*):**
+   - Gulir (*scroll*) konten sheet hingga ke bagian paling bawah.
+   - **Hasil yang Diharapkan:**
+     - Teks disclaimer (*"Data bersumber dari Sectors Financial API..."*) terlihat seutuhnya di atas tombol *"Tutup"* tanpa tertutup atau terpotong sebagian.

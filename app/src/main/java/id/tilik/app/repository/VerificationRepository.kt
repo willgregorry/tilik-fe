@@ -1,12 +1,5 @@
 package id.tilik.app.repository
 
-import id.tilik.app.model.VerifyResponse
+import id.tilik.app.data.repository.VerificationRepository as DataVerificationRepository
 
-interface VerificationRepository {
-    suspend fun verify(
-        imageBytes: ByteArray,
-        audioBytes: ByteArray?,
-        detectedTicker: String?,
-        extractedText: String? = null
-    ): Result<VerifyResponse>
-}
+typealias VerificationRepository = DataVerificationRepository

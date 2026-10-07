@@ -43,8 +43,8 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import id.tilik.app.data.model.VerificationResponse
 import id.tilik.app.model.OverlayState
-import id.tilik.app.model.VerifyData
 import id.tilik.app.ui.theme.TilikTheme
 import kotlin.math.abs
 
@@ -70,7 +70,7 @@ class OverlayWindowManager(
     private var layoutParams: WindowManager.LayoutParams? = null
 
     private var currentState by mutableStateOf(OverlayState.IDLE)
-    private var currentData by mutableStateOf<VerifyData?>(null)
+    private var currentData by mutableStateOf<VerificationResponse?>(null)
     private var detectedTicker by mutableStateOf<String?>(null)
     private var currentClaimText by mutableStateOf<String?>(null)
     private var errorMessage by mutableStateOf<String?>(null)
@@ -259,6 +259,7 @@ class OverlayWindowManager(
                                     ) {
                                         VerdictCardView(
                                             data = currentData!!,
+                                            claimText = currentClaimText,
                                             onCloseClick = { onCloseClicked() }
                                         )
                                     }
@@ -291,7 +292,7 @@ class OverlayWindowManager(
 
     fun updateState(
         state: OverlayState,
-        data: VerifyData? = null,
+        data: VerificationResponse? = null,
         ticker: String? = null,
         claimText: String? = null,
         error: String? = null

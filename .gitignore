@@ -74,3 +74,5 @@ captures/
 .venv/
 __pycache__/
 *.pyc
+
+.openapi.json

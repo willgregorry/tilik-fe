@@ -4,6 +4,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -36,20 +37,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import id.tilik.app.model.OverlayState
-import id.tilik.app.ui.theme.AccentBlue
-import id.tilik.app.ui.theme.DarkSlateBorder
-import id.tilik.app.ui.theme.DarkSlateSurface
+import id.tilik.app.ui.theme.BrandPrimary
+import id.tilik.app.ui.theme.BrandSecondary
+import id.tilik.app.ui.theme.StatusDanger
 import id.tilik.app.ui.theme.TextPrimary
 import id.tilik.app.ui.theme.TextSecondary
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
-import id.tilik.app.ui.theme.VerdictInvalid
 
 @Composable
 fun FloatingBubbleView(
@@ -121,36 +120,26 @@ private fun IdleBubble(
     isDockedOnLeft: Boolean,
     onClick: () -> Unit
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val borderPulse by infiniteTransition.animateFloat(
-        initialValue = 1.0f,
-        targetValue = 1.3f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "borderPulse"
-    )
-
     if (detectedTicker != null && !isTucked) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .clip(RoundedCornerShape(28.dp))
-                .background(DarkSlateSurface)
+                .background(Color.White)
                 .border(
-                    width = 2.dp,
-                    color = AccentBlue.copy(alpha = borderPulse.coerceIn(0.6f, 1.0f)),
+                    width = 1.5.dp,
+                    color = BrandPrimary,
                     shape = RoundedCornerShape(28.dp)
                 )
-                .padding(end = 12.dp)
+                .clickable { onClick() }
+                .padding(end = 14.dp)
         ) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(52.dp)
                     .clip(CircleShape)
-                    .background(AccentBlue.copy(alpha = 0.15f))
+                    .background(Color(0xFFF1F5F9))
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -158,7 +147,7 @@ private fun IdleBubble(
                 ) {
                     Text(
                         text = detectedTicker,
-                        color = AccentBlue,
+                        color = BrandPrimary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace
@@ -167,15 +156,15 @@ private fun IdleBubble(
                         modifier = Modifier
                             .size(4.dp)
                             .clip(CircleShape)
-                            .background(AccentBlue)
+                            .background(BrandPrimary)
                     )
                 }
             }
             Spacer(modifier = Modifier.width(8.dp))
             Column {
                 Text(
-                    text = "📋 DARI CLIPBOARD",
-                    color = AccentBlue,
+                    text = "DARI CLIPBOARD",
+                    color = BrandSecondary,
                     fontSize = 8.5.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace
@@ -184,7 +173,7 @@ private fun IdleBubble(
                     text = "Tap untuk Tilik",
                     color = TextPrimary,
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
@@ -193,12 +182,13 @@ private fun IdleBubble(
             modifier = Modifier
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(DarkSlateSurface)
+                .background(Color.White)
                 .border(
                     width = 1.5.dp,
-                    color = AccentBlue.copy(alpha = if (isTucked) 0.75f else 1.0f),
+                    color = BrandPrimary,
                     shape = CircleShape
                 )
+                .clickable { onClick() }
         ) {
             Crossfade(
                 targetState = isTucked,
@@ -206,9 +196,6 @@ private fun IdleBubble(
                 label = "tuckedCrossfade"
             ) { tucked ->
                 if (tucked) {
-                    // Tampilan saat ngumpet di pinggir layar (Tucked state):
-                    // Elemen indikator ditaruh di sisi separuh lingkaran yang menghadap ke dalam layar,
-                    // sehingga tidak ada teks yang terpotong jelek oleh bezel layar.
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = if (isDockedOnLeft) Alignment.CenterEnd else Alignment.CenterStart
@@ -220,7 +207,7 @@ private fun IdleBubble(
                                 Icons.AutoMirrored.Rounded.KeyboardArrowLeft
                             },
                             contentDescription = "Buka Tilik",
-                            tint = AccentBlue,
+                            tint = BrandPrimary,
                             modifier = Modifier
                                 .padding(
                                     start = if (!isDockedOnLeft) 6.dp else 0.dp,
@@ -230,7 +217,6 @@ private fun IdleBubble(
                         )
                     }
                 } else {
-                    // Tampilan normal saat aktif: Icon Tilik di tengah lingkaran utuh
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -251,39 +237,23 @@ private fun IdleBubble(
 
 @Composable
 private fun CapturingBubble(onClick: () -> Unit) {
-    val infiniteTransition = rememberInfiniteTransition(label = "radar")
-    val radarScale by infiniteTransition.animateFloat(
-        initialValue = 1.0f,
-        targetValue = 1.4f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "radarScale"
-    )
-
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier.size(56.dp)
+        modifier = Modifier
+            .size(56.dp)
+            .clickable { onClick() }
     ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .scale(radarScale)
-                .clip(CircleShape)
-                .border(1.5.dp, AccentBlue.copy(alpha = 0.4f), CircleShape)
-        )
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(DarkSlateSurface)
-                .border(2.dp, AccentBlue, CircleShape)
+                .background(Color.White)
+                .border(2.dp, BrandPrimary, CircleShape)
         ) {
             CircularProgressIndicator(
                 modifier = Modifier.size(24.dp),
-                color = AccentBlue,
+                color = BrandPrimary,
                 strokeWidth = 2.5.dp
             )
         }
@@ -298,13 +268,13 @@ private fun AnalyzingCapsule() {
         modifier = Modifier
             .height(42.dp)
             .clip(RoundedCornerShape(21.dp))
-            .background(DarkSlateSurface)
-            .border(1.5.dp, AccentBlue, RoundedCornerShape(21.dp))
+            .background(Color.White)
+            .border(1.5.dp, BrandPrimary, RoundedCornerShape(21.dp))
             .padding(horizontal = 14.dp)
     ) {
         CircularProgressIndicator(
             modifier = Modifier.size(16.dp),
-            color = AccentBlue,
+            color = BrandPrimary,
             strokeWidth = 2.dp
         )
         Spacer(modifier = Modifier.width(10.dp))
@@ -312,7 +282,7 @@ private fun AnalyzingCapsule() {
             text = "Menilik bursa...",
             color = TextPrimary,
             fontSize = 12.sp,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
@@ -327,20 +297,20 @@ private fun ErrorBubble(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(DarkSlateSurface)
-            .border(1.dp, DarkSlateBorder, RoundedCornerShape(12.dp))
+            .background(Color.White)
+            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
         Text(
             text = message,
-            color = VerdictInvalid,
+            color = StatusDanger,
             fontSize = 11.sp,
             modifier = Modifier.weight(1f, fill = false)
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = "Coba Lagi",
-            color = AccentBlue,
+            color = BrandPrimary,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier
@@ -363,3 +333,4 @@ private fun ErrorBubble(
         }
     }
 }
+
