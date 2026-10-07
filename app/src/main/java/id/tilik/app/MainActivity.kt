@@ -57,17 +57,22 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val prefs by lazy {
+        getSharedPreferences("tilik_prefs", Context.MODE_PRIVATE)
+    }
+
+    private var isServiceExplicitlyStopped: Boolean
+        get() = prefs.getBoolean("service_explicitly_stopped", false)
+        set(value) = prefs.edit().putBoolean("service_explicitly_stopped", value).apply()
+
     private var isSplashActive by mutableStateOf(true)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         refreshPermissions()
 
-        if (hasOverlayPermission) {
+        if (hasOverlayPermission && !isServiceExplicitlyStopped) {
             startTilikService()
-            if (!hasProjectionPermission) {
-                requestScreenCapture()
-            }
         }
 
         setContent {
@@ -185,6 +190,9 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         refreshPermissions()
+        if (hasOverlayPermission && !isServiceExplicitlyStopped && !isServiceRunning) {
+            startTilikService()
+        }
     }
 
     private fun refreshPermissions() {
@@ -258,13 +266,14 @@ class MainActivity : ComponentActivity() {
             stopService(intent)
             isServiceRunning = false
             hasProjectionPermission = false
+            isServiceExplicitlyStopped = true
         } else {
             if (!hasOverlayPermission) {
                 requestOverlayPermission()
                 return
             }
+            isServiceExplicitlyStopped = false
             startTilikService()
-            requestScreenCapture()
         }
     }
 }

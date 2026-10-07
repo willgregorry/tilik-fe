@@ -1,5 +1,6 @@
 package id.tilik.app.service
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,6 +8,7 @@ import android.app.Service
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.media.projection.MediaProjection
@@ -14,6 +16,7 @@ import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import id.tilik.app.capture.AudioBufferRecorder
 import id.tilik.app.capture.ScreenCaptureManager
 import id.tilik.app.detection.StockKeywordDetector
@@ -62,8 +65,14 @@ class OverlayService : Service() {
         createNotificationChannel()
         startAsForeground()
 
-        audioRecorder = AudioBufferRecorder(bufferDurationSeconds = 5)
-        audioRecorder?.start()
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            try {
+                audioRecorder = AudioBufferRecorder(bufferDurationSeconds = 5)
+                audioRecorder?.start()
+            } catch (e: Exception) {
+                Timber.tag("TILIK_MONITOR").w(e, "Tidak dapat memulai audio recorder")
+            }
+        }
 
         clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
         clipListener = ClipboardManager.OnPrimaryClipChangedListener {
@@ -97,6 +106,7 @@ class OverlayService : Service() {
                     val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
                     mediaProjection = projectionManager.getMediaProjection(resultCode, data)
                     hasProjectionToken = true
+                    startAsForeground()
                     Timber.tag("TILIK_MONITOR").i("🔑 [TOKEN GRANTED] Izin MediaProjection aktif")
                 }
             }
@@ -332,11 +342,18 @@ class OverlayService : Service() {
     private fun startAsForeground() {
         val notification = buildForegroundNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-            )
+            var fgsType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            } else {
+                0
+            }
+            if (hasProjectionToken) {
+                fgsType = fgsType or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                fgsType = fgsType or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            }
+            startForeground(NOTIFICATION_ID, notification, fgsType)
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }

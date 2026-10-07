@@ -82,6 +82,10 @@ class OverlayWindowManager(
     private val IDLE_TIMEOUT_MS = 3000L
     private var tuckAnimator: ValueAnimator? = null
 
+    private val overlayPrefs by lazy {
+        context.getSharedPreferences("tilik_overlay_prefs", Context.MODE_PRIVATE)
+    }
+
     private var lastBubbleX = 0
     private var lastBubbleY = 450
 
@@ -144,7 +148,21 @@ class OverlayWindowManager(
 
         val metrics = context.resources.displayMetrics
         val screenWidth = metrics.widthPixels
-        lastBubbleX = screenWidth - 240
+        val screenHeight = metrics.heightPixels
+        val defaultBubbleW = (56 * metrics.density).toInt()
+        val marginPx = (8 * metrics.density).toInt().coerceAtLeast(16)
+        val defaultY = (screenHeight * 0.42f).toInt()
+
+        isDockedOnLeft = overlayPrefs.getBoolean("pref_is_docked_left", false)
+        lastBubbleY = overlayPrefs.getInt("pref_bubble_y", defaultY).coerceIn(
+            (60 * metrics.density).toInt(),
+            screenHeight - (100 * metrics.density).toInt()
+        )
+        lastBubbleX = if (isDockedOnLeft) {
+            marginPx
+        } else {
+            screenWidth - defaultBubbleW - marginPx
+        }
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -469,6 +487,14 @@ class OverlayWindowManager(
         } else {
             screenWidth - viewW - marginPx
         }
+
+        // Simpan posisi terakhir pengguna ke SharedPreferences agar selalu diingat
+        try {
+            overlayPrefs.edit()
+                .putInt("pref_bubble_y", params.y)
+                .putBoolean("pref_is_docked_left", isDockedOnLeft)
+                .apply()
+        } catch (_: Exception) {}
 
         isTucked = false
         snapAnimator?.cancel()
