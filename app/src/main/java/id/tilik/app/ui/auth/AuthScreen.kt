@@ -56,6 +56,7 @@ import androidx.compose.ui.platform.LocalView
 fun AuthScreen(
     isLoading: Boolean = false,
     errorMessage: String? = null,
+    errorDetails: String? = null,
     onGoogleSignInClick: () -> Unit,
     onSkip: (() -> Unit)? = null,
     onBackClick: (() -> Unit)? = null
@@ -197,29 +198,68 @@ fun AuthScreen(
                 }
             }
 
-            // Error Message (if any)
+            // Error Message & Diagnostic Log (if any)
             AnimatedVisibility(
-                visible = !errorMessage.isNullOrBlank(),
+                visible = !errorMessage.isNullOrBlank() || !errorDetails.isNullOrBlank(),
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(AppRedBg)
-                            .border(1.dp, Color(0x33EF4444), RoundedCornerShape(12.dp))
-                            .padding(horizontal = 14.dp, vertical = 10.dp)
-                    ) {
-                        Text(
-                            text = errorMessage ?: "",
-                            color = AppRed,
-                            fontSize = 12.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+
+                    if (!errorMessage.isNullOrBlank()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(AppRedBg)
+                                .border(1.dp, Color(0x33EF4444), RoundedCornerShape(12.dp))
+                                .padding(horizontal = 14.dp, vertical = 10.dp)
+                        ) {
+                            Text(
+                                text = errorMessage,
+                                color = AppRed,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+
+                    // Debug Error Details Box (Dibawah pesan error untuk diagnosa FE vs BE)
+                    if (!errorDetails.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFF141414))
+                                .border(1.dp, Color(0x2EFFFFFF), RoundedCornerShape(10.dp))
+                                .padding(horizontal = 14.dp, vertical = 12.dp)
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = "DIAGNOSTIC ERROR LOG (DEBUG):",
+                                    color = Color(0xFFFF8C70),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = errorDetails,
+                                    color = Color(0xFFE2E8F0),
+                                    fontSize = 11.5.sp,
+                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                    lineHeight = 16.sp,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
                     }
                 }
             }

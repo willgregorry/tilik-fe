@@ -377,8 +377,8 @@ private fun FailedRequestSection(
     val userRole = remember { SessionManager.getUserRole() }
     val roleBitmap = remember(userRole) {
         val candidates = when (userRole) {
-            UserRole.EXPERT -> listOf("EXPERT.jpg", "expert.jpg", "expert.png", "role_expert.png")
-            UserRole.PEMULA -> listOf("PEMULA.jpg", "pemula.jpg", "pemula.png", "role_beginner.png")
+            UserRole.EXPERT -> listOf("EXPERT.png", "EXPERT.jpg", "expert.png", "role_expert.png")
+            UserRole.PEMULA -> listOf("PEMULA.png", "PEMULA.jpg", "pemula.png", "role_beginner.png")
         }
         var loaded: android.graphics.Bitmap? = null
         for (f in candidates) {
@@ -405,51 +405,31 @@ private fun FailedRequestSection(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Role Avatar Circle (Menggantikan bulatan tanda minus)
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF1E1E1E))
-                    .border(1.5.dp, BrandPrimary.copy(alpha = 0.45f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                if (roleBitmap != null) {
-                    Image(
-                        bitmap = roleBitmap.asImageBitmap(),
-                        contentDescription = "Role ${userRole.displayName}",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                    )
-                } else {
-                    Text(
-                        text = if (userRole == UserRole.EXPERT) "PAKAR" else "PEMULA",
-                        color = BrandPrimary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+            // Role Avatar (Transparent Mascot)
+            if (roleBitmap != null) {
+                Image(
+                    bitmap = roleBitmap.asImageBitmap(),
+                    contentDescription = "Role ${userRole.displayName}",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(110.dp)
+                )
+            } else {
+                Text(
+                    text = if (userRole == UserRole.EXPERT) "PAKAR" else "PEMULA",
+                    color = BrandPrimary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Pill Role Badge
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(percent = 50))
-                    .background(Color(0x1FFF5C35))
-                    .border(1.dp, Color(0x40FF5C35), RoundedCornerShape(percent = 50))
-                    .padding(horizontal = 10.dp, vertical = 3.dp)
-            ) {
-                Text(
-                    text = "Mode Investor: ${userRole.displayName}",
-                    color = BrandPrimary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            Text(
+                text = "Mode ${userRole.displayName}",
+                color = TextSecondary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -1122,14 +1102,14 @@ private fun BrokerRowItem(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(Color.White)
-                    .border(1.dp, BorderColor, RoundedCornerShape(6.dp))
+                    .background(Color(0xFF1E1E1E))
+                    .border(1.dp, Color(0x26FFFFFF), RoundedCornerShape(6.dp))
                     .padding(horizontal = 7.dp, vertical = 2.dp)
             ) {
                 Text(
-                    text = broker.brokerCode,
-                    color = TextDark,
-                    fontSize = 12.sp,
+                    text = broker.brokerCode.ifBlank { "-" },
+                    color = Color.White,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace
                 )
@@ -1137,7 +1117,7 @@ private fun BrokerRowItem(
 
             Text(
                 text = shortType,
-                color = if (isForeign) Color(0xFF0284C7) else TextSubtle,
+                color = if (isForeign) Color(0xFF38BDF8) else TextSubtle,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium
             )

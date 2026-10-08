@@ -22,9 +22,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.AutoGraph
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Button
@@ -32,6 +32,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,8 +57,6 @@ import id.tilik.app.data.session.SessionManager
 import id.tilik.app.ui.theme.AppAccent
 import id.tilik.app.ui.theme.AppBackground
 import id.tilik.app.ui.theme.AppCard
-import id.tilik.app.ui.theme.AppGreen
-import id.tilik.app.ui.theme.AppGreenBg
 import id.tilik.app.ui.theme.TextMuted
 import id.tilik.app.ui.theme.TextPrimary
 import id.tilik.app.ui.theme.TextSecondary
@@ -82,84 +81,88 @@ fun RoleSelectionScreen(
             .padding(horizontal = 24.dp, vertical = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Badge Tag
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(percent = 50))
-                .background(Color(0x1FFF5C35))
-                .border(1.dp, Color(0x40FF5C35), RoundedCornerShape(percent = 50))
-                .padding(horizontal = 14.dp, vertical = 6.dp)
-        ) {
-            Text(
-                text = "PERSONAS & GAYA BAHASA",
-                color = AppAccent,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.8.sp
-            )
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Text(
-            text = "Pilih Mode Investor Anda",
+            text = "Pilih Peran Anda",
             color = TextPrimary,
-            fontSize = 24.sp,
+            fontSize = 26.sp,
             fontWeight = FontWeight.Bold,
-            letterSpacing = (-0.5).sp
+            letterSpacing = (-0.6).sp,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Tilik akan menyesuaikan gaya verifikasi, rekomendasi psikologis, dan kedalaman data pasar sesuai peran Anda.",
+            text = "Sesuaikan gaya analisis dengan kebutuhan Anda.",
             color = TextSecondary,
-            fontSize = 13.sp,
-            lineHeight = 18.sp,
-            modifier = Modifier.padding(horizontal = 8.dp),
+            fontSize = 14.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
-        // Card 1: PEMULA (role_beginner.png)
+        // Card 1: Pemula (Image Left)
         RoleChoiceCard(
             role = UserRole.PEMULA,
-            title = "Pemula (Beginner)",
-            tag = "Panduan Sederhana & Ramah",
-            description = "Gaya bahasa lugas tanpa jargon rumit. Dilengkapi refleksi psikologis (cooling-off prompt) untuk mencegah keputusan impulsif atau FOMO.",
-            assetFileName = "role_beginner.png",
+            title = "Pemula",
+            description = "Bahasa santai & psikologi pasar",
+            assetFileName = "PEMULA.png",
             isSelected = selectedRole == UserRole.PEMULA,
             fallbackIcon = Icons.Rounded.School,
+            imageOnRight = false,
             onSelect = { selectedRole = UserRole.PEMULA }
         )
 
-        Spacer(modifier = Modifier.height(18.dp))
+        // Center "atau" Divider (matching reference UI)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            HorizontalDivider(
+                modifier = Modifier.weight(1f),
+                color = Color(0x14FFFFFF),
+                thickness = 1.dp
+            )
+            Text(
+                text = "atau",
+                color = TextMuted,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            HorizontalDivider(
+                modifier = Modifier.weight(1f),
+                color = Color(0x14FFFFFF),
+                thickness = 1.dp
+            )
+        }
 
-        // Card 2: EXPERT (role_expert.png)
+        // Card 2: Pakar (Image Right)
         RoleChoiceCard(
             role = UserRole.EXPERT,
-            title = "Pakar (Expert)",
-            tag = "Metrik Lengkap & Kritis",
-            description = "Akses rasio valuasi mendalam (PE, PBV, EV/EBITDA), analisis bandarmologi arus modal asing, serta tantangan analisis devil's advocate.",
-            assetFileName = "role_expert.png",
+            title = "Pakar",
+            description = "Valuasi lengkap & broker flow",
+            assetFileName = "EXPERT.png",
             isSelected = selectedRole == UserRole.EXPERT,
             fallbackIcon = Icons.Rounded.AutoGraph,
+            imageOnRight = true,
             onSelect = { selectedRole = UserRole.EXPERT }
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
         Text(
-            text = "Catatan: Anda dapat mengubah mode ini sewaktu-waktu di Pengaturan Profil.",
+            text = "Dapat diubah kapan saja di Profil.",
             color = TextMuted,
-            fontSize = 11.sp,
+            fontSize = 12.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Confirm Button
         Button(
@@ -177,7 +180,7 @@ fun RoleSelectionScreen(
                 .fillMaxWidth()
                 .height(52.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(16.dp),
             enabled = !isSubmitting
         ) {
             if (isSubmitting) {
@@ -187,12 +190,21 @@ fun RoleSelectionScreen(
                     strokeWidth = 2.dp
                 )
             } else {
-                Text(
-                    text = "Simpan & Lanjutkan",
-                    color = Color.Black,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Lanjutkan",
+                        color = Color.Black,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                        contentDescription = null,
+                        tint = Color.Black,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
 
@@ -201,21 +213,21 @@ fun RoleSelectionScreen(
 }
 
 @Composable
-private fun RoleChoiceCard(
+fun RoleChoiceCard(
     role: UserRole,
     title: String,
-    tag: String,
     description: String,
     assetFileName: String,
     isSelected: Boolean,
     fallbackIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    imageOnRight: Boolean = false,
     onSelect: () -> Unit
 ) {
     val context = LocalContext.current
     val bitmap = remember(assetFileName, role) {
         val candidates = when (role) {
-            UserRole.PEMULA -> listOf(assetFileName, "PEMULA.jpg", "pemula.jpg", "pemula.png", "role_beginner.png", "beginner.png")
-            UserRole.EXPERT -> listOf(assetFileName, "EXPERT.jpg", "expert.jpg", "expert.png", "role_expert.png")
+            UserRole.PEMULA -> listOf("PEMULA.png", assetFileName, "PEMULA.jpg", "pemula.png", "pemula.jpg")
+            UserRole.EXPERT -> listOf("EXPERT.png", assetFileName, "EXPERT.jpg", "expert.png", "expert.jpg")
         }
         var loaded: android.graphics.Bitmap? = null
         for (file in candidates) {
@@ -236,93 +248,33 @@ private fun RoleChoiceCard(
             .border(
                 width = if (isSelected) 2.dp else 1.dp,
                 color = if (isSelected) AppAccent else Color(0x14FFFFFF),
-                shape = RoundedCornerShape(22.dp)
+                shape = RoundedCornerShape(26.dp)
             )
             .clickable { onSelect() },
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) Color(0xFF171311) else AppCard
+            containerColor = if (isSelected) Color(0xFF1B1513) else AppCard
         ),
-        shape = RoundedCornerShape(22.dp)
+        shape = RoundedCornerShape(26.dp)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            // Header Row: Tag & Radio check
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(percent = 50))
-                        .background(if (isSelected) Color(0x33FF5C35) else Color(0x14FFFFFF))
-                        .border(
-                            1.dp,
-                            if (isSelected) AppAccent else Color(0x14FFFFFF),
-                            RoundedCornerShape(percent = 50)
-                        )
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = tag,
-                        color = if (isSelected) AppAccent else TextSecondary,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Icon(
-                    imageVector = if (isSelected) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
-                    contentDescription = null,
-                    tint = if (isSelected) AppAccent else TextMuted,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Body Row: Illustration/Icon + Text
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Asset Image or Fallback Box
-                if (bitmap != null) {
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = title,
-                        modifier = Modifier
-                            .size(68.dp)
-                            .clip(RoundedCornerShape(16.dp)),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .size(68.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(if (isSelected) Color(0x2BFF5C35) else Color(0x1AFFFFFF))
-                            .border(1.dp, if (isSelected) AppAccent else Color(0x14FFFFFF), RoundedCornerShape(16.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = fallbackIcon,
-                            contentDescription = null,
-                            tint = if (isSelected) AppAccent else TextSecondary,
-                            modifier = Modifier.size(36.dp)
-                        )
-                    }
-                }
-
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (!imageOnRight) {
+                // Image on Left
+                RoleIllustration(bitmap = bitmap, title = title, fallbackIcon = fallbackIcon, isSelected = isSelected)
                 Spacer(modifier = Modifier.width(16.dp))
-
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
                         color = TextPrimary,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.4).sp
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = description,
                         color = TextSecondary,
@@ -330,7 +282,75 @@ private fun RoleChoiceCard(
                         lineHeight = 16.sp
                     )
                 }
+                Spacer(modifier = Modifier.width(8.dp))
+                Icon(
+                    imageVector = if (isSelected) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
+                    contentDescription = null,
+                    tint = if (isSelected) AppAccent else TextMuted,
+                    modifier = Modifier.size(24.dp)
+                )
+            } else {
+                // Text on Left, Image on Right
+                Icon(
+                    imageVector = if (isSelected) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
+                    contentDescription = null,
+                    tint = if (isSelected) AppAccent else TextMuted,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        color = TextPrimary,
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.4).sp
+                    )
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = description,
+                        color = TextSecondary,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                RoleIllustration(bitmap = bitmap, title = title, fallbackIcon = fallbackIcon, isSelected = isSelected)
             }
+        }
+    }
+}
+
+@Composable
+private fun RoleIllustration(
+    bitmap: android.graphics.Bitmap?,
+    title: String,
+    fallbackIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    isSelected: Boolean
+) {
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = title,
+            modifier = Modifier
+                .size(105.dp),
+            contentScale = ContentScale.Fit
+        )
+    } else {
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(if (isSelected) Color(0x2BFF5C35) else Color(0x1AFFFFFF))
+                .border(1.dp, if (isSelected) AppAccent else Color(0x14FFFFFF), RoundedCornerShape(20.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = fallbackIcon,
+                contentDescription = null,
+                tint = if (isSelected) AppAccent else TextSecondary,
+                modifier = Modifier.size(40.dp)
+            )
         }
     }
 }

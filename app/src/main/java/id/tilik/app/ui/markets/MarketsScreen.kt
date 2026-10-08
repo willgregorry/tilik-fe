@@ -79,15 +79,24 @@ fun MarketsScreen(
 
     LaunchedEffect(historyId) {
         if (!historyId.isNullOrBlank()) {
-            isLoading = true
-            val result = AuthRepository.getHistoryDetail(historyId)
-            if (result.isSuccess) {
-                detailResponse = result.getOrNull()
-                detailResponse?.verification?.ticker?.let {
+            val cached = AuthRepository.getCachedHistoryDetail(historyId)
+            if (cached != null) {
+                detailResponse = cached
+                cached.verification?.ticker?.let {
                     selectedTicker = it
                 }
+                isLoading = false
+            } else {
+                isLoading = true
+                val result = AuthRepository.getHistoryDetail(historyId)
+                if (result.isSuccess) {
+                    detailResponse = result.getOrNull()
+                    detailResponse?.verification?.ticker?.let {
+                        selectedTicker = it
+                    }
+                }
+                isLoading = false
             }
-            isLoading = false
         }
     }
 

@@ -86,7 +86,11 @@ class OverlayService : Service() {
             onClaimSubmitted = { claim, ticker -> processClaimVerification(claim, ticker) },
             onRetryClicked = { openClaimInput() },
             onCloseClicked = { resetToIdle() },
-            onStopServiceClicked = { stopSelf() }
+            onStopServiceClicked = {
+                getSharedPreferences("tilik_prefs", Context.MODE_PRIVATE)
+                    .edit().putBoolean("service_explicitly_stopped", true).apply()
+                stopSelf()
+            }
         )
         overlayWindowManager?.show()
         Timber.tag("TILIK_MONITOR").i("🟢 [SERVICE STARTED] Floating overlay aktif & siap menilik")

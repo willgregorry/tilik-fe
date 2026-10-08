@@ -34,7 +34,9 @@ data class AuthResponse(
     @SerialName("expires_in")
     val expiresIn: Int = 86400,
     @SerialName("user")
-    val user: UserPayload
+    val user: UserPayload,
+    @SerialName("is_new_user")
+    val isNewUser: Boolean = false
 )
 
 @Serializable

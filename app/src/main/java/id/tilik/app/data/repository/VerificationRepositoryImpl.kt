@@ -35,6 +35,7 @@ class VerificationRepositoryImpl(
         return when (val networkResult = remoteDataSource.verifyClaim(request)) {
             is NetworkResult.Success -> {
                 Timber.tag("TILIK_REPO").i("✅ Verifikasi sukses diterima dari backend. Emiten: ${networkResult.data.ticker}, Vonis: ${networkResult.data.verdict}")
+                AuthRepository.invalidateHistoryCache()
                 Result.success(networkResult.data)
             }
             is NetworkResult.Error -> {

@@ -470,6 +470,213 @@ Skenario ini memverifikasi 3 fitur penting yang baru saja disempurnakan:
        - Begitu juga pada tombol aksi di bagian bawah sheet, tertulis rapi **"Kembali"**.
      - Saat tombol **"Kembali"** ditekan, aplikasi floating langsung membuka kembali bottom sheet ke **halaman awal input klaim**.
      - Teks klaim yang sebelumnya telah diketik **TIDAK HILANG** sehingga pengguna tidak perlu mengetik ulang dari awal.
+---
 
+### Skenario 20: Uji Transisi Animasi Antar Halaman & Tab Navigasi Bawah (Smooth Transition & BackHandler)
+
+Skenario ini memverifikasi bahwa perpindahan halaman di dalam aplikasi Tilik tidak lagi berganti secara tiba-tiba/abrupt, melainkan mengadopsi standar animasi transisi modern Android:
+
+1. **Uji Transisi Antar Tab Bottom Navigation (Home ↔ Markets ↔ History ↔ Settings):**
+   - Buka aplikasi **Tilik**.
+   - Dari tab **Home**, ketuk tab **Markets** atau **History** (bergerak ke kanan).
+   - **Hasil yang Diharapkan:**
+     - Halaman baru meluncur masuk secara halus dari sisi kanan (`slideInHorizontally` + `fadeIn`), sementara halaman sebelumnya meluncur keluar ke arah kiri dengan redaman transparansi.
+     - Ikon dan teks di Bottom Bar memiliki respon animasi warna (`animateColorAsState`) dan sedikit pantulan skala elastis (`animateFloatAsState`).
+   - Dari tab **Settings**, ketuk tab **Home** (bergerak ke kiri).
+   - **Hasil yang Diharapkan:** Halaman meluncur masuk secara halus dari sisi kiri ke kanan, memberikan sensasi spasial yang konsisten dan natural.
+
+2. **Uji Transisi Halaman Penuh (Profile Detail & Notifikasi / History Fullscreen):**
+   - Di tab Home / Bar atas, ketuk foto profil avatar akun Anda atau opsi **Profil** di tab Pengaturan.
+   - **Hasil yang Diharapkan:**
+     - Halaman **Profil Detail** meluncur masuk mulus dari kanan layar ke kiri dengan fade-in standar Android (*push transition*).
+   - Tekan tombol panah kembali (`<`) atau tekan tombol / gestur **Back** di HP Anda.
+   - **Hasil yang Diharapkan:**
+     - Halaman Profil Detail meluncur keluar kembali ke arah kanan (*pop exit*), dan halaman beranda utama kembali tampil dari kiri tanpa ada kedipan kasar atau layar kosong tiba-tiba.
+
+3. **Uji Tombol Back Native Android (`BackHandler` Cerdas):**
+   - Buka halaman **Notifikasi** (ikon lonceng di atas) atau masuk ke tab **Markets** dengan memilih salah satu saham forensik.
+   - Tekan tombol / gestur **Back** fisik HP:
+   - **Hasil yang Diharapkan:**
+     - Sistem secara pintar menutup halaman detail/notifikasi terlebih dahulu kembali ke tab utama.
+     - Jika Anda berada di tab selain Home (misal tab Settings), menekan Back akan memindahkan Anda kembali ke tab **Home** secara animasi sebelum akhirnya keluar dari aplikasi.
+---
+
+### Skenario 21: Uji Sistem Caching (Anti-Hit API Berulang), Pilihan Role & Tombol Simpan, dan Desain Profil
+
+Skenario ini memverifikasi optimasi performa backend & perbaikan UI di halaman Profil dan Riwayat:
+
+1. **Uji Caching Halaman Riwayat & Forensik (Bebas Beban Server):**
+   - Masuk ke tab **History**.
+   - Perhatikan bahwa daftar riwayat tampil seketika (*instant* dari cache) tanpa perlu menampilkan loading skeleton lagi setiap kali berpindah tab.
+   - Ketuk salah satu item riwayat untuk membuka tab **Markets** (Detail Forensik). Data langsung tampil dari cache tanpa loading spinner.
+   - Kembali ke tab History lalu ke Markets lagi: **Tidak ada pemanggilan API berulang ke backend**.
+   - Uji tombol Refresh manual: Ketuk ikon reload putar di kanan atas tab History. Ikon akan berputar dan barulah aplikasi melakukan penarikan data baru dari server (*force refresh*).
+
+2. **Uji Pemilihan Role & Tombol Simpan di Profil (Bebas Bug):**
+   - Buka halaman **Profil** (ketuk avatar di kanan atas atau tab Settings -> Profil).
+   - Misalkan saat ini Anda berada di role **Pakar**.
+   - Ketuk kartu **Pemula**:
+     - **Hasil yang Diharapkan:** Ceklis langsung berpindah seketika ke kartu **Pemula** di layar HP Anda tanpa ada bug tertinggal.
+     - Di pojok kanan atas, tombol **[ Simpan ]** otomatis menyala oranye (`AppAccent`), dan muncul panduan di bawah kartu: *"Ketuk Simpan di kanan atas untuk menerapkan."*
+     - Server **BELUM dipanggil sama sekali** sehingga tidak ada beban jaringan sia-sia jika Anda berubah pikiran.
+   - Ketuk kartu **Pakar** kembali: Tombol Simpan otomatis meredup/nonaktif karena tidak ada perubahan yang perlu disimpan.
+   - Pilih **Pemula** lalu ketuk tombol **[ Simpan ]**:
+     - Tombol menampilkan spinner kecil sejenak, data dikirimkan **hanya satu kali** ke API.
+     - Muncul indikator hijau: *"Perubahan role berhasil disimpan."*
+
+3. **Uji Estetika Profil Baru (Logo Google & Border Bersih):**
+   - Pada foto profil bulat di atas: Border oranye tebal telah **dihapus**, digantikan dengan hairline border minimalis abu-abu gelap yang rapi.
+   - Pada bagian informasi akun: Terdapat logo resmi **Google** (`google.png`) tepat di sebelah tulisan **"AKUN GOOGLE"**.
+---
+
+### Skenario 22: Uji Logo Google Transparan, UX Tombol Simpan Zero-Fluff, dan Dialog Perubahan Belum Disimpan (Unsaved Changes Dialog)
+
+Skenario ini memverifikasi pembaruan visual aset Google dan proteksi data role pengguna:
+
+1. **Uji Logo Google Transparan (No White Box Background):**
+   - Buka halaman **Profil**.
+   - Perhatikan bagian **AKUN GOOGLE**.
+   - **Hasil yang Diharapkan:** Logo Google kini tampil dengan latar belakang **transparan sempurna** tanpa kotak putih di belakangnya, menyatu sangat elegan dengan latar AMOLED gelap (`#0A0A0A`).
+
+2. **Uji Tombol Simpan Zero-Fluff (Hapus Teks Panduan):**
+   - Pada halaman Profil, tidak ada lagi kalimat panduan bertele-tele di bawah kartu role.
+   - Status tombol **[ Simpan ]** di kanan atas:
+     - **Meredup (Disabled)**: Saat role sama dengan yang tersimpan saat ini.
+     - **Menyala Oranye (Active)**: Begitu Anda mengetuk role yang berbeda (misal dari Pakar ke Pemula). Pengguna cukup melihat tombol Simpan aktif tanpa perlu membaca instruksi panjang.
+
+3. **Uji Komponen Dialog Konfirmasi (UnsavedChangesDialog):**
+   - Ubah role (misal ketuk **Pemula** saat akun Anda berada di Pakar) hingga tombol Simpan menyala.
+   - **JANGAN** ketuk tombol Simpan.
+   - Tekan tombol **Kembali (`<`)** di kiri atas Top Bar, **ATAU** lakukan gestur/tombol **Back** native Android di HP Anda:
+   - **Hasil yang Diharapkan:**
+     - Aplikasi tidak langsung menutup, melainkan memunculkan dialog konfirmasi elegan ala Fintech AMOLED:
+       - Judul: *"Perubahan Belum Disimpan"*
+       - Pesan: *"Perubahan role Anda belum disimpan. Yakin ingin keluar tanpa menyimpan?"*
+       - Dua tombol: **[ Lanjut Edit ]** dan **[ Buang ]** (merah).
+   - **Uji Tombol [ Lanjut Edit ]:**
+     - Ketuk "Lanjut Edit". Dialog tertutup dan Anda tetap berada di halaman profil sehingga bisa menekan [ Simpan ].
+   - **Uji Tombol [ Buang ]:**
+     - Ketuk tombol Back lagi, lalu ketuk "Buang". Dialog tertutup, perubahan dibatalkan, dan Anda kembali ke halaman sebelumnya.
+
+---
+
+### Skenario 23: Uji Perbaikan Insets & Top Bar Halaman Notifikasi (Bebas Tabrakan Status Bar & Jam HP)
+
+Skenario ini memverifikasi bahwa saat membuka halaman Notifikasi / Riwayat dari ikon lonceng, layout tidak lagi melompat ke atas (*naik ke atas*) dan tidak lagi tertabrak jam status bar:
+
+1. **Uji Pembukaan Halaman Notifikasi (Status Bar Clearance):**
+   - Dari halaman Beranda (Dashboard), ketuk ikon **Lonceng Notifikasi** di pojok kanan atas `AppTopBar`.
+   - **Hasil yang Diharapkan:**
+     - Halaman Notifikasi meluncur masuk secara halus (*slide transition*).
+     - **TIDAK ADA LAGI KONTEN NAIK KE ATAS:** Judul *"Riwayat Verifikasi"*, tombol kembali (`<`), dan tombol muat ulang (`↻`) kini memiliki padding status bar (`statusBarsPadding()`) yang presisi.
+     - Posisi tombol kembali dan judul berada tepat di bawah jam HP (misal: 14:38), ikon sinyal, dan persentase baterai tanpa saling bertumpukan atau terpotong bezel/punch hole kamera.
+2. **Uji Proporsi Top Bar & Tombol Navigasi:**
+   - Perhatikan tombol kembali (`<`) dan tombol reload (`↻`) di bagian atas:
+     - Ukuran lingkaran konsisten 40dp dengan ikon 18dp ala Fintech Dark Mode, sejajar dan proporsional dengan halaman Profil.
+   - Bagian bawah halaman juga terlindungi oleh `navigationBarsPadding()` sehingga tombol CTA *"Scan sekarang"* aman di atas gesture pill navigasi Android.
+3. **Uji Kembali ke Halaman Utama:**
+   - Ketuk tombol **`<`** di kiri atas atau lakukan gestur **Back** Android di HP Anda:
+   - **Hasil yang Diharapkan:**
+     - Halaman menutup kembali ke Beranda secara mulus tanpa ada kedipan layar.
+
+---
+
+### Skenario 24: Uji Login Ulang Tanpa Pemilihan Role Berulang (One-Time Role Onboarding Per Akun)
+
+Skenario ini memverifikasi bahwa pemilihan mode investor (Role Onboarding) **hanya terjadi satu kali saat pertama kali akun didaftarkan**, dan saat pengguna logout lalu login kembali menggunakan akun yang sama, aplikasi langsung masuk ke Beranda tanpa meminta pemilihan role ulang:
+
+1. **Uji Logout Akun yang Sudah Memiliki Role:**
+   - Masuk ke menu **Profil** (ketuk foto profil avatar di pojok kanan atas `AppTopBar` atau via Pengaturan).
+   - Geser ke bagian bawah, lalu ketuk tombol **Logout**.
+   - **Hasil yang Diharapkan:** Sesi aktif dikeluarkan dengan aman dan aplikasi kembali ke **AuthScreen** (*Lanjutkan dengan Google*).
+
+2. **Uji Login Ulang Menggunakan Akun Google yang Sama:**
+   - Di **AuthScreen**, sentuh tombol **"Lanjutkan dengan Google"**.
+   - Pilih akun Google Anda yang sebelumnya sudah pernah memilih role (misal: Pakar atau Pemula).
+   - **Hasil yang Diharapkan:**
+     - Aplikasi langsung menyelesaikan autentikasi dan **langsung membuka Beranda/Dashboard**.
+     - **TIDAK MUNCUL LAGI LAYAR PILIH PERAN/ROLE (`RoleSelectionScreen`)**.
+     - Role yang sebelumnya Anda pilih tetap aktif dan tersimpan rapi di profil Anda.
+
+3. **Verifikasi Akun Baru vs Akun Lama:**
+   - Pemilihan role hanya akan dimunculkan jika akun Google yang digunakan adalah akun baru yang belum pernah memilih role di server Tilik maupun di perangkat HP Anda.
+
+---
+
+### Skenario 25: Uji Kecepatan Login Google (Fast-Failover & Direct Wi-Fi LAN)
+
+Skenario ini memverifikasi bahwa proses login ulang dengan Google kini berlangsung instan (< 1 detik) tanpa delay timeout 10 detik:
+
+1. **Uji Kecepatan Login Ulang (Instant Redirect):**
+   - Di **AuthScreen**, sentuh tombol **"Lanjutkan dengan Google"**.
+   - Pilih akun Google Anda di jendela sistem.
+   - **Hasil yang Diharapkan:**
+     - Begitu akun Google dipilih, aplikasi langsung terhubung ke backend dalam **~300-500ms**.
+     - Spinner loading hanya muncul sekejap dan langsung **ter-redirect seketika ke Beranda/Dashboard**.
+     - Tidak ada lagi jeda macet/hang selama 10 detik yang sebelumnya disebabkan oleh timeout localhost.
+2. **Uji Ketahanan Jaringan (Dynamic Host Memory):**
+   - Aplikasi kini secara cerdas mengingat host backend yang berhasil (`activeHost`), sehingga setiap request berikutnya langsung menuju rute tercepat tanpa mencoba ulang host yang mati.
+
+---
+
+### Skenario 26: Uji Tampilan Chip Kode Broker (Bebas Kotak Putih) & Integritas 100% Real Data Sectors API
+
+Skenario ini memverifikasi perbaikan kontras visual pada daftar broker (Top Buyers & Top Sellers) serta memastikan integritas data bursa murni dari backend:
+
+1. **Penjelasan Mengapa Sebelumnya Muncul "Kotak Putih":**
+   - Kotak putih tersebut sebenarnya adalah **badge chip kode broker** (misal: `AK`, `YU`, `DX`, `YP`).
+   - Pada versi sebelumnya, background chip tersebut diset ke `Color.White`, sedangkan teks di dalamnya menggunakan `TextDark` yang bernilai `Color(0xFFFFFFFF)` (putih).
+   - Akibatnya terjadi **tabrakan warna putih-di-atas-putih** (*white-on-white text collision*), membuat teks kode sekuritas/broker tertutup sempurna dan hanya tampak sebagai kotak putih polos.
+
+2. **Uji Tampilan Visual Chip Broker Baru (Fintech Dark AMOLED):**
+   - Lakukan pemindaian klaim bursa (misal teks terkait saham `BBRI` atau saham lainnya).
+   - Buka kartu hasil verifikasi (**Verdict Card**):
+   - Geser ke bagian **Top Buyers (Akumulasi)** dan **Top Sellers (Distribusi)**.
+   - **Hasil yang Diharapkan:**
+     - **TIDAK ADA LAGI KOTAK PUTIH POLOS**.
+     - Kode sekuritas kini tampil sangat jelas dengan font monospace tebal (contoh: `AK`, `YU`, `DX`, `YP`) di dalam kapsul abu-abu gelap elegan (`#1E1E1E`) berbatas garis tipis (*hairline border*).
+     - Label tipe broker asing (**Asing**) tampil dengan warna biru langit lembut (`#38BDF8`), sedangkan domestik (**Domestik**) berwarna abu-abu netral (`#888888`).
+     - Angka nilai transaksi akumulasi tampil hijau menyala (`+Rp 15,2 Miliar`), dan nilai distribusi tampil merah tegas (`-Rp 24,1 Miliar`).
+     - Semua elemen warna harmonis dan tidak ada lagi teks atau elemen yang bertabrakan.
+
+3. **Verifikasi Integritas Data (100% Murni Live Data Sectors Financial API):**
+   - Seluruh data angka, metrik valuasi, dan status bursa yang tampil di layar kartu hasil **100% bersumber langsung dari Sectors Financial API v2**:
+     - **Arus Modal Asing:** Ditarik langsung dari endpoint `/v2/foreign-flow/{ticker}/` (contoh: `-Rp 106,8 Miliar`).
+     - **Top Buyers & Sellers:** Ditarik langsung dari endpoint `/v2/broker-summary/{ticker}/top/?n_brokers=10` dengan rincian transaksi riil broker BEI.
+     - **Valuasi PBV & PER vs Median Sektor:** Dihitung langsung dari data pasar harian `/v2/company/report/{ticker}/` perbandingan sektor perbankan/industri terkait.
+     - **Kesehatan Finansial & Sanksi BEI:** Laba YoY dan Arus Kas dari `/v2/financials/quarterly/{ticker}/`, serta status Papan Khusus (FCA) dari `/v2/suspensions/`.
+     - **TIDAK ADA data mock, dummy, atau data acak sama sekali**.
+
+---
+
+### Skenario 27: Uji Penyelarasan Beranda dengan OpenAPI Docs (Pembersihan Mock Saldo & Portofolio)
+
+Skenario ini memverifikasi bahwa halaman Beranda (Dashboard) telah dibersihkan dari seluruh fitur mock/fiktif yang tidak didukung API backend, serta sepenuhnya menyajikan data riil yang sesuai dengan `openapi.json`:
+
+1. **Verifikasi Penghapusan Fitur Fiktif:**
+   - Buka tab **Beranda / Home**.
+   - **Hasil yang Diharapkan:**
+     - **TOTAL SALDO PORTOFOLIO DIHAPUS**: Tidak ada lagi kartu saldo fiktif ("Rp 128.450.000", tombol "Top Up" / "Tarik"). Tilik adalah asisten fact-checker bursa, bukan dompet/sekuritas.
+     - **PORTOFOLIO SAHAM DUMMY DIHAPUS**: Carousel saham dummy dan grafik kurva portofolio telah dihapus total karena tidak memiliki endpoint di API.
+     - **DAFTAR PANTAUAN (WATCHLIST) DUMMY DIHAPUS**: Fitur watchlist dummy telah dihapus.
+     - **ISU & RUMOR TREN DUMMY DIHAPUS**: Bagian rumor trending yang tidak memiliki API pendukung telah dibersihkan.
+
+2. **Verifikasi Fitur Asli yang Tersedia (Didukung OpenAPI):**
+   - **1. Kontrol Layanan Tilik (`ServiceControlCard`):**
+     - Kartu kontrol status widget mengambang di baris teratas:
+       - Status: `Standby` (abu-abu) atau `Aktif` (hijau).
+       - Tombol: `Mulai Layanan Tilik` (Oranye) atau `Hentikan Layanan` (Merah).
+     - Mengetuk tombol ini langsung menyalakan/mematikan bubble melayang Tilik di atas layar HP Anda.
+   - **2. Riwayat Pemindaian Terakhir (`RecentScansSection`):**
+     - Mengambil data asli dari endpoint `GET /api/v1/history` (menggunakan sistem in-memory cache instan):
+       - Menampilkan 3 hasil scan verifikasi bursa terakhir yang benar-benar pernah Anda lakukan (misal: BBRI).
+       - Dilengkapi badge ticker monospace (misal: `BBRI`), platform asal (`X`), dan status vonis (`WASPADA • 92%`).
+       - Mengetuk item riwayat akan **langsung membuka tab Markets (Detail Forensik)** untuk saham tersebut.
+       - Mengetuk teks **"Lihat Semua >"** di kanan atas akan langsung memindahkan Anda ke tab **History**.
+       - Jika akun baru belum memiliki riwayat, tampil kartu panduan bersih: *"Belum Ada Riwayat Pemindaian"*.
+   - **3. Kesiapan Sistem Android (`SystemReadinessCard`):**
+     - Menampilkan indikator izin native: Floating Overlay, Tangkapan Layar, Deteksi Teks, dan Latar Belakang.
+   - **4. Integrasi Pasar BEI (`MarketOverviewCard`):**
+     - Menampilkan ringkasan cakupan 900+ emiten BEI yang terhubung langsung dengan Sectors Financial API v2.
 
 

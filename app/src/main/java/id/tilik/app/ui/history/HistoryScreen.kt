@@ -1,5 +1,7 @@
 package id.tilik.app.ui.history
 
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,8 +13,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -24,28 +28,43 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import id.tilik.app.data.model.HistoryItemSummary
+import id.tilik.app.data.model.UserRole
 import id.tilik.app.data.model.VerdictLevel
 import id.tilik.app.data.repository.AuthRepository
+import id.tilik.app.data.session.SessionManager
 import id.tilik.app.ui.components.SkeletonBox
 import id.tilik.app.ui.components.shimmerEffect
 import id.tilik.app.ui.theme.AppAccent
@@ -55,32 +74,80 @@ import id.tilik.app.ui.theme.TextMuted
 import id.tilik.app.ui.theme.TextPrimary
 import id.tilik.app.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 @Composable
 fun HistoryScreen(
     modifier: Modifier = Modifier,
     onBackClick: (() -> Unit)? = null,
-    onItemClick: ((historyId: String, ticker: String?) -> Unit)? = null
+    onItemClick: ((historyId: String, ticker: String?) -> Unit)? = null,
+    onScanNowClick: (() -> Unit)? = null
 ) {
-    var isLoading by remember { mutableStateOf(true) }
-    var itemsList by remember { mutableStateOf<List<HistoryItemSummary>>(emptyList()) }
+    val context = LocalContext.current
+    val currentUser by SessionManager.currentUserState.collectAsState()
+    val userRole = currentUser?.userRole ?: SessionManager.getUserRole()
+    val roleBitmap = remember(userRole) {
+        val candidates = when (userRole) {
+            UserRole.EXPERT -> listOf("EXPERT.png", "EXPERT.jpg", "expert.png", "expert.jpg")
+            UserRole.PEMULA -> listOf("PEMULA.png", "PEMULA.jpg", "pemula.png", "pemula.jpg")
+        }
+        var loaded: android.graphics.Bitmap? = null
+        for (f in candidates) {
+            try {
+                context.assets.open(f).use { input ->
+                    loaded = BitmapFactory.decodeStream(input)
+                }
+                if (loaded != null) break
+            } catch (_: Exception) {
+            }
+        }
+        loaded
+    }
+
+    val cachedInitial = remember { AuthRepository.getCachedHistory() }
+    var itemsList by remember { mutableStateOf(cachedInitial?.items ?: emptyList()) }
+    var isLoading by remember { mutableStateOf(cachedInitial == null) }
+    var isRefreshing by remember { mutableStateOf(false) }
     var selectedFilter by remember { mutableStateOf("Semua") }
     val filters = listOf("Semua", "Sesuai Fakta", "Waspada", "Hoax")
     val scope = rememberCoroutineScope()
 
-    fun loadHistory() {
-        isLoading = true
+    val infiniteTransition = rememberInfiniteTransition(label = "RefreshRotation")
+    val rotationAngle by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "Rotation"
+    )
+
+    fun loadHistory(forceRefresh: Boolean = false) {
+        if (forceRefresh) {
+            isRefreshing = true
+        } else if (itemsList.isEmpty()) {
+            isLoading = true
+        }
         scope.launch {
-            val result = AuthRepository.getHistory(limit = 30)
-            if (result.isSuccess) {
-                itemsList = result.getOrNull()?.items ?: emptyList()
+            try {
+                withTimeoutOrNull(4000L) {
+                    val result = AuthRepository.getHistory(limit = 30, forceRefresh = forceRefresh)
+                    if (result.isSuccess) {
+                        itemsList = result.getOrNull()?.items ?: emptyList()
+                    }
+                }
+            } catch (e: Exception) {
+                timber.log.Timber.e(e, "Fetch history failed")
+            } finally {
+                isLoading = false
+                isRefreshing = false
             }
-            isLoading = false
         }
     }
 
     LaunchedEffect(Unit) {
-        loadHistory()
+        loadHistory(forceRefresh = false)
     }
 
     val filteredList = remember(selectedFilter, itemsList) {
@@ -92,13 +159,25 @@ fun HistoryScreen(
         }
     }
 
+    val insetsModifier = if (onBackClick != null) {
+        Modifier
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(top = 12.dp)
+    } else {
+        Modifier
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(AppBackground)
+            .then(insetsModifier)
             .padding(horizontal = 20.dp)
     ) {
-        Spacer(modifier = Modifier.height(12.dp))
+        if (onBackClick == null) {
+            Spacer(modifier = Modifier.height(12.dp))
+        }
 
         // Header Row
         Row(
@@ -112,7 +191,7 @@ fun HistoryScreen(
                 if (onBackClick != null) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
                             .background(AppCard)
                             .border(1.dp, Color(0x14FFFFFF), CircleShape)
@@ -123,10 +202,10 @@ fun HistoryScreen(
                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Kembali",
                             tint = TextPrimary,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
                 }
 
                 Column {
@@ -147,18 +226,20 @@ fun HistoryScreen(
 
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(40.dp)
                     .clip(CircleShape)
                     .background(AppCard)
                     .border(1.dp, Color(0x14FFFFFF), CircleShape)
-                    .clickable { loadHistory() },
+                    .clickable { loadHistory(forceRefresh = true) },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Refresh,
                     contentDescription = "Muat Ulang",
                     tint = TextSecondary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier
+                        .size(18.dp)
+                        .rotate(if (isRefreshing) rotationAngle else 0f)
                 )
             }
         }
@@ -212,37 +293,58 @@ fun HistoryScreen(
                     .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(CircleShape)
-                            .background(AppCard)
-                            .border(1.dp, Color(0x14FFFFFF), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.History,
-                            contentDescription = null,
-                            tint = TextMuted,
-                            modifier = Modifier.size(28.dp)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                ) {
+                    if (roleBitmap != null) {
+                        Image(
+                            bitmap = roleBitmap.asImageBitmap(),
+                            contentDescription = if (userRole == UserRole.EXPERT) "Pakar" else "Pemula",
+                            modifier = Modifier.size(185.dp),
+                            contentScale = ContentScale.Fit
                         )
                     }
-                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
                     Text(
                         text = "Belum Ada Riwayat",
                         color = TextPrimary,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.4).sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
                     Text(
-                        text = "Verifikasi cuitan saham di Threads/X menggunakan widget Tilik untuk mulai mencatat riwayat.",
+                        text = "Masih belum ada hasil scan sebelumnya. Scan cuitan bursa atau klaim saham Anda sekarang.",
                         color = TextSecondary,
-                        fontSize = 12.sp,
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 32.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        onClick = { onScanNowClick?.invoke() },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                            .height(48.dp)
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        Text(
+                            text = "Scan sekarang",
+                            color = Color.Black,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         } else {

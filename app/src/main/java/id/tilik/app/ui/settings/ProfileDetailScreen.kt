@@ -1,5 +1,7 @@
 package id.tilik.app.ui.settings
 
+import androidx.activity.compose.BackHandler
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,21 +25,25 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ExitToApp
+import androidx.compose.material.icons.rounded.AutoGraph
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.RadioButtonUnchecked
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.School
-import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,9 +58,13 @@ import id.tilik.app.R
 import id.tilik.app.data.model.UserRole
 import id.tilik.app.data.repository.AuthRepository
 import id.tilik.app.data.session.SessionManager
+import id.tilik.app.ui.auth.RoleChoiceCard
+import id.tilik.app.ui.components.UnsavedChangesDialog
 import id.tilik.app.ui.theme.AppAccent
 import id.tilik.app.ui.theme.AppBackground
 import id.tilik.app.ui.theme.AppCard
+import id.tilik.app.ui.theme.AppGrayDark
+import id.tilik.app.ui.theme.AppGreen
 import id.tilik.app.ui.theme.AppRed
 import id.tilik.app.ui.theme.AppRedBg
 import id.tilik.app.ui.theme.TextMuted
@@ -73,7 +83,24 @@ fun ProfileDetailScreen(
 
     val displayName = currentUser?.name?.takeIf { it.isNotBlank() } ?: "User"
     val displayEmail = currentUser?.email ?: "-"
-    val userRole = currentUser?.userRole ?: UserRole.PEMULA
+    val activeRole = currentUser?.userRole ?: SessionManager.getUserRole()
+    var selectedRole by remember(activeRole) { mutableStateOf(activeRole) }
+    var isSavingRole by remember { mutableStateOf(false) }
+    var showUnsavedChangesDialog by remember { mutableStateOf(false) }
+
+    val hasRoleChanges = selectedRole != activeRole
+
+    val handleBack = {
+        if (hasRoleChanges) {
+            showUnsavedChangesDialog = true
+        } else {
+            onBackClick()
+        }
+    }
+
+    BackHandler(enabled = hasRoleChanges) {
+        showUnsavedChangesDialog = true
+    }
 
     Column(
         modifier = Modifier
@@ -88,33 +115,72 @@ fun ProfileDetailScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(AppCard)
-                    .border(1.dp, Color(0x14FFFFFF), CircleShape)
-                    .clickable { onBackClick() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = "Kembali",
-                    tint = TextPrimary,
-                    modifier = Modifier.size(18.dp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(AppCard)
+                        .border(1.dp, Color(0x14FFFFFF), CircleShape)
+                        .clickable { handleBack() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "Kembali",
+                        tint = TextPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Text(
+                    text = "Profil",
+                    color = TextPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Text(
-                text = "Profil & Pengaturan Akun",
-                color = TextPrimary,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
+            val hasRoleChanges = selectedRole != activeRole
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(if (hasRoleChanges) AppAccent else Color(0x1AFFFFFF))
+                    .border(
+                        1.dp,
+                        if (hasRoleChanges) Color.Transparent else Color(0x14FFFFFF),
+                        RoundedCornerShape(percent = 50)
+                    )
+                    .clickable(enabled = hasRoleChanges && !isSavingRole) {
+                        scope.launch {
+                            isSavingRole = true
+                            AuthRepository.updateRole(selectedRole)
+                            isSavingRole = false
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 7.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isSavingRole) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(14.dp)
+                    )
+                } else {
+                    Text(
+                        text = "Simpan",
+                        color = if (hasRoleChanges) Color.White else AppGrayDark,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -131,7 +197,7 @@ fun ProfileDetailScreen(
                     .size(92.dp)
                     .clip(CircleShape)
                     .background(AppCard)
-                    .border(2.dp, AppAccent, CircleShape),
+                    .border(1.dp, Color(0x14FFFFFF), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 if (!currentUser?.picture.isNullOrBlank()) {
@@ -178,9 +244,9 @@ fun ProfileDetailScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 1. Role / Mode Persona Setting Card (PUT /api/v1/user/settings)
+        // 1. Role Setting
         Text(
-            text = "MODE PERSONA ANALISIS (ROLE)",
+            text = "MODE INVESTOR",
             color = TextMuted,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
@@ -188,131 +254,59 @@ fun ProfileDetailScreen(
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
         )
 
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, Color(0x14FFFFFF), RoundedCornerShape(20.dp)),
-            colors = CardDefaults.cardColors(containerColor = AppCard),
-            shape = RoundedCornerShape(20.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                // Role Option: PEMULA
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(if (userRole == UserRole.PEMULA) Color(0x1FFF5C35) else Color.Transparent)
-                        .border(
-                            1.dp,
-                            if (userRole == UserRole.PEMULA) AppAccent else Color.Transparent,
-                            RoundedCornerShape(14.dp)
-                        )
-                        .clickable {
-                            if (userRole != UserRole.PEMULA) {
-                                scope.launch {
-                                    AuthRepository.updateRole(UserRole.PEMULA)
-                                }
-                            }
-                        }
-                        .padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0x1AFFFFFF)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Rounded.School, contentDescription = null, tint = AppAccent, modifier = Modifier.size(20.dp))
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(text = "Pemula (Beginner)", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(text = "Bahasa ramah & refleksi psikologis", color = TextSecondary, fontSize = 11.sp)
-                        }
-                    }
+        Spacer(modifier = Modifier.height(8.dp))
 
-                    Icon(
-                        imageVector = if (userRole == UserRole.PEMULA) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
-                        contentDescription = null,
-                        tint = if (userRole == UserRole.PEMULA) AppAccent else TextMuted,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Role Option: EXPERT
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(if (userRole == UserRole.EXPERT) Color(0x1FFF5C35) else Color.Transparent)
-                        .border(
-                            1.dp,
-                            if (userRole == UserRole.EXPERT) AppAccent else Color.Transparent,
-                            RoundedCornerShape(14.dp)
-                        )
-                        .clickable {
-                            if (userRole != UserRole.EXPERT) {
-                                scope.launch {
-                                    AuthRepository.updateRole(UserRole.EXPERT)
-                                }
-                            }
-                        }
-                        .padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0x1AFFFFFF)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Rounded.TrendingUp, contentDescription = null, tint = AppAccent, modifier = Modifier.size(20.dp))
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(text = "Pakar (Expert)", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(text = "Valuasi penuh & devil's advocate", color = TextSecondary, fontSize = 11.sp)
-                        }
-                    }
-
-                    Icon(
-                        imageVector = if (userRole == UserRole.EXPERT) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
-                        contentDescription = null,
-                        tint = if (userRole == UserRole.EXPERT) AppAccent else TextMuted,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
+        // Role Option 1: PEMULA
+        RoleChoiceCard(
+            role = UserRole.PEMULA,
+            title = "Pemula",
+            description = "Bahasa santai & psikologi pasar",
+            assetFileName = "PEMULA.png",
+            isSelected = selectedRole == UserRole.PEMULA,
+            fallbackIcon = Icons.Rounded.School,
+            imageOnRight = false,
+            onSelect = {
+                selectedRole = UserRole.PEMULA
             }
-        }
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Role Option 2: EXPERT
+        RoleChoiceCard(
+            role = UserRole.EXPERT,
+            title = "Pakar",
+            description = "Valuasi lengkap & broker flow",
+            assetFileName = "EXPERT.png",
+            isSelected = selectedRole == UserRole.EXPERT,
+            fallbackIcon = Icons.Rounded.AutoGraph,
+            imageOnRight = true,
+            onSelect = {
+                selectedRole = UserRole.EXPERT
+            }
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
         // 2. Account Information Card
-        Text(
-            text = "INFORMASI AKUN GOOGLE",
-            color = TextMuted,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 0.8.sp,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
-        )
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.google),
+                contentDescription = "Google",
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "AKUN GOOGLE",
+                color = TextMuted,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.8.sp
+            )
+        }
 
         Card(
             modifier = Modifier
@@ -386,5 +380,22 @@ fun ProfileDetailScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+    }
+
+    if (showUnsavedChangesDialog) {
+        UnsavedChangesDialog(
+            title = "Perubahan Belum Disimpan",
+            message = "Perubahan role Anda belum disimpan. Yakin ingin keluar tanpa menyimpan?",
+            discardText = "Buang",
+            keepEditingText = "Lanjut Edit",
+            onDiscard = {
+                showUnsavedChangesDialog = false
+                selectedRole = activeRole
+                onBackClick()
+            },
+            onKeepEditing = {
+                showUnsavedChangesDialog = false
+            }
+        )
     }
 }

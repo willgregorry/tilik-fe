@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +46,13 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.ui.graphics.Color
 import id.tilik.app.ui.theme.AppAccent
 import id.tilik.app.ui.theme.AppGray
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
 
 enum class AppTab(val title: String, val activeIcon: ImageVector, val inactiveIcon: ImageVector) {
     HOME("Home", Icons.Rounded.Home, Icons.Outlined.Home),
@@ -77,9 +85,20 @@ fun AppBottomNav(
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AppTab.values().forEach { tab ->
+            AppTab.entries.forEach { tab ->
                 val isSelected = currentTab == tab
                 val interactionSource = remember { MutableInteractionSource() }
+
+                val animatedColor by animateColorAsState(
+                    targetValue = if (isSelected) AppAccent else AppGray,
+                    animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+                    label = "TabColor_${tab.name}"
+                )
+                val animatedScale by animateFloatAsState(
+                    targetValue = if (isSelected) 1.08f else 1.0f,
+                    animationSpec = spring(dampingRatio = 0.65f, stiffness = 500f),
+                    label = "TabScale_${tab.name}"
+                )
 
                 Box(
                     modifier = Modifier
@@ -97,15 +116,17 @@ fun AppBottomNav(
                         Icon(
                             imageVector = if (isSelected) tab.activeIcon else tab.inactiveIcon,
                             contentDescription = tab.title,
-                            tint = if (isSelected) AppAccent else AppGray,
-                            modifier = Modifier.size(22.dp)
+                            tint = animatedColor,
+                            modifier = Modifier
+                                .size(22.dp)
+                                .scale(animatedScale)
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = tab.title,
-                            color = if (isSelected) AppAccent else AppGray,
+                            color = animatedColor,
                             fontSize = 10.sp,
-                            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                         )
                     }
                 }
