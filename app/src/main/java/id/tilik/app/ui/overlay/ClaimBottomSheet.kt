@@ -3,6 +3,7 @@ package id.tilik.app.ui.overlay
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.view.HapticFeedbackConstants
 import android.view.ViewTreeObserver
 import androidx.compose.animation.AnimatedVisibility
@@ -241,6 +242,10 @@ fun ClaimBottomSheet(
     }
 
     fun fetchLatestClipboard() {
+        // Jangan timpa jika initialText telah diisi secara eksplisit (misal dari ACTION_PROCESS_TEXT)
+        if (initialText.isNotBlank() && !hasUserManuallyEdited) {
+            return
+        }
         try {
             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
             if (cm?.hasPrimaryClip() == true) {
@@ -580,11 +585,25 @@ fun ClaimBottomSheet(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Left: Tilik Logo + Name Asset
+                        // Left: Tilik Logo + Name Asset (Klik untuk membuka aplikasi utama Tilik)
                         Image(
                             painter = painterResource(id = R.drawable.logo_name),
-                            contentDescription = "Tilik",
-                            modifier = Modifier.height(34.dp),
+                            contentDescription = "Buka Aplikasi Tilik",
+                            modifier = Modifier
+                                .height(34.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    try {
+                                        val intent = Intent(context, id.tilik.app.MainActivity::class.java).apply {
+                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                        }
+                                        context.startActivity(intent)
+                                        animateAndDismiss()
+                                    } catch (e: Exception) {
+                                        Timber.tag("TILIK_MONITOR").e(e, "Gagal membuka aplikasi Tilik dari logo bottom sheet")
+                                    }
+                                },
                             contentScale = ContentScale.Fit
                         )
 

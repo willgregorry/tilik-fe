@@ -31,6 +31,22 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".service.ProcessTextActivity"
+            android:label="@string/action_tilik_ai"
+            android:icon="@drawable/favicon"
+            android:theme="@style/Theme.Tilik.Transparent"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:launchMode="singleTask">
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
         <service
             android:name=".service.OverlayService"
             android:enabled="true"

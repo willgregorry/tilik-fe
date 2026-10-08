@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">Tilik</string>
     <string name="accessibility_service_description">Tilik Accessibility Service mendeteksi pembahasan kode emiten saham di media sosial untuk verifikasi fakta pasar modal.</string>
+    <string name="action_tilik_ai">Tilik AI</string>
 </resources>

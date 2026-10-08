@@ -181,6 +181,7 @@ class MainActivity : ComponentActivity() {
         if (hasOverlayPermission && !isServiceExplicitlyStopped) {
             startTilikService()
         }
+        handleClaimIntent(intent)
 
         setContent {
             TilikTheme {
@@ -496,6 +497,25 @@ class MainActivity : ComponentActivity() {
         refreshPermissions()
         if (hasOverlayPermission && !isServiceExplicitlyStopped && !isServiceRunning) {
             startTilikService()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleClaimIntent(intent)
+    }
+
+    private fun handleClaimIntent(intent: Intent?) {
+        val claim = intent?.getStringExtra(OverlayService.EXTRA_CLAIM_TEXT)
+        if (!claim.isNullOrBlank()) {
+            refreshPermissions()
+            if (hasOverlayPermission) {
+                val serviceIntent = Intent(this, OverlayService::class.java).apply {
+                    action = OverlayService.ACTION_PROCESS_TEXT_CLAIM
+                    putExtra(OverlayService.EXTRA_CLAIM_TEXT, claim)
+                }
+                ContextCompat.startForegroundService(this, serviceIntent)
+            }
         }
     }
 

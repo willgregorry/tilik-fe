@@ -80,20 +80,26 @@ class OverlayService : Service() {
         }
         clipboardManager?.addPrimaryClipChangedListener(clipListener)
 
-        overlayWindowManager = OverlayWindowManager(
-            context = this,
-            onBubbleClicked = { openClaimInput() },
-            onClaimSubmitted = { claim, ticker -> processClaimVerification(claim, ticker) },
-            onRetryClicked = { openClaimInput() },
-            onCloseClicked = { resetToIdle() },
-            onStopServiceClicked = {
-                getSharedPreferences("tilik_prefs", Context.MODE_PRIVATE)
-                    .edit().putBoolean("service_explicitly_stopped", true).apply()
-                stopSelf()
-            }
-        )
+        initOverlayWindowManager()
         overlayWindowManager?.show()
         Timber.tag("TILIK_MONITOR").i("🟢 [SERVICE STARTED] Floating overlay aktif & siap menilik")
+    }
+
+    private fun initOverlayWindowManager() {
+        if (overlayWindowManager == null) {
+            overlayWindowManager = OverlayWindowManager(
+                context = this,
+                onBubbleClicked = { openClaimInput() },
+                onClaimSubmitted = { claim, ticker -> processClaimVerification(claim, ticker) },
+                onRetryClicked = { openClaimInput() },
+                onCloseClicked = { resetToIdle() },
+                onStopServiceClicked = {
+                    getSharedPreferences("tilik_prefs", Context.MODE_PRIVATE)
+                        .edit().putBoolean("service_explicitly_stopped", true).apply()
+                    stopSelf()
+                }
+            )
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -130,6 +136,30 @@ class OverlayService : Service() {
             }
             ACTION_TRIGGER_VERIFY -> {
                 openClaimInput()
+            }
+            ACTION_PROCESS_TEXT_CLAIM -> {
+                val claim = intent.getStringExtra(EXTRA_CLAIM_TEXT)
+                if (!claim.isNullOrBlank()) {
+                    val ticker = StockKeywordDetector.extractPotentialTicker(claim)
+                    activeClaimText = claim
+                    activeDetectedTicker = ticker
+
+                    getSharedPreferences("tilik_prefs", Context.MODE_PRIVATE)
+                        .edit().putBoolean("service_explicitly_stopped", false).apply()
+
+                    if (overlayWindowManager == null) {
+                        initOverlayWindowManager()
+                    }
+                    overlayWindowManager?.show()
+                    overlayWindowManager?.updateState(
+                        state = OverlayState.INPUT,
+                        ticker = ticker,
+                        claimText = claim
+                    )
+                    Timber.tag("TILIK_MONITOR").i("✨ [PROCESS TEXT CLAIM] Pop up modal bottom sheet dari teks terpilih: \"${claim.take(60)}\" | Emiten: $ticker")
+                } else {
+                    openClaimInput()
+                }
             }
             ACTION_STOP -> {
                 stopSelf()
@@ -400,6 +430,7 @@ class OverlayService : Service() {
         const val ACTION_SET_MEDIA_PROJECTION_TOKEN = "id.tilik.app.ACTION_SET_MEDIA_PROJECTION_TOKEN"
         const val ACTION_STOCK_DETECTED = "id.tilik.app.ACTION_STOCK_DETECTED"
         const val ACTION_TRIGGER_VERIFY = "id.tilik.app.ACTION_TRIGGER_VERIFY"
+        const val ACTION_PROCESS_TEXT_CLAIM = "id.tilik.app.ACTION_PROCESS_TEXT_CLAIM"
 
         const val EXTRA_RESULT_CODE = "extra_result_code"
         const val EXTRA_DATA = "extra_data"

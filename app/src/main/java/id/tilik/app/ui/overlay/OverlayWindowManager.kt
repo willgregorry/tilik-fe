@@ -512,7 +512,7 @@ class OverlayWindowManager(
                 params.y = 0
                 params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
                 @Suppress("DEPRECATION")
-                params.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+                params.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN
             }
             else -> {
                 // Mode Floating Bubble biasa saat idle atau proses berlangsung (ANALYZING, ERROR, dsb)

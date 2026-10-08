@@ -127,18 +127,34 @@ fun HistoryScreen(
         if (forceRefresh) {
             isRefreshing = true
         } else if (itemsList.isEmpty()) {
-            isLoading = true
+            val initial = AuthRepository.getCachedHistory()
+            if (initial != null && initial.items.isNotEmpty()) {
+                itemsList = initial.items
+                isLoading = false
+            } else {
+                isLoading = true
+            }
         }
         scope.launch {
             try {
-                withTimeoutOrNull(4000L) {
-                    val result = AuthRepository.getHistory(limit = 30, forceRefresh = forceRefresh)
-                    if (result.isSuccess) {
-                        itemsList = result.getOrNull()?.items ?: emptyList()
+                val result = AuthRepository.getHistory(limit = 30, forceRefresh = forceRefresh)
+                if (result.isSuccess) {
+                    val fresh = result.getOrNull()?.items
+                    if (fresh != null) {
+                        itemsList = fresh
+                    }
+                } else {
+                    val fallback = AuthRepository.getCachedHistory()?.items
+                    if (fallback != null && fallback.isNotEmpty()) {
+                        itemsList = fallback
                     }
                 }
             } catch (e: Exception) {
                 timber.log.Timber.e(e, "Fetch history failed")
+                val fallback = AuthRepository.getCachedHistory()?.items
+                if (fallback != null && fallback.isNotEmpty()) {
+                    itemsList = fallback
+                }
             } finally {
                 isLoading = false
                 isRefreshing = false

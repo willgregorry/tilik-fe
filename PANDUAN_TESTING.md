@@ -680,3 +680,35 @@ Skenario ini memverifikasi bahwa halaman Beranda (Dashboard) telah dibersihkan d
      - Menampilkan ringkasan cakupan 900+ emiten BEI yang terhubung langsung dengan Sectors Financial API v2.
 
 
+
+
+---
+
+### Skenario 28: Uji Seleksi Teks Android Langsung ("Tilik AI" via `ACTION_PROCESS_TEXT`)
+
+Skenario ini memverifikasi integrasi native Android text selection toolbar (`ACTION_PROCESS_TEXT`) yang memungkinkan Anda memverifikasi teks apa pun langsung dari menu seleksi teks aplikasi lain tanpa perlu menyentuh floating bubble terlebih dahulu:
+
+1. **Konsep & Cara Kerja Fitur:**
+   - Fitur ini memanfaatkan standar native Android `Intent.ACTION_PROCESS_TEXT` (sesuai panduan resmi Google / Ian Lake).
+   - Ketika teks diblok/diseleksi di aplikasi manapun (WhatsApp, Twitter/X, Threads, Telegram, Chrome, Gmail, Catatan), Android akan menyisipkan aksi custom **"Tilik AI"** (lengkap dengan ikon Tilik) berdampingan dengan menu sistem seperti *Copy*, *Paste*, *Select all*, dan *Share*.
+   - Saat opsi **"Tilik AI"** ditekan, Modal Bottom Sheet verifikasi klaim akan **langsung meluncur mulus dari bawah** (*slide up*) dengan teks yang diseleksi sudah terisi otomatis di kotak klaim.
+   - Fungsi floating widget tetap bekerja normal dan tidak terpengaruh sedikit pun.
+
+2. **Langkah Pengujian Langsung di HP:**
+   - **Langkah 1:** Buka aplikasi perpesanan atau media sosial apa pun di HP Anda (contoh: WhatsApp, Twitter/X, Chrome, atau Gmail).
+   - **Langkah 2:** Seleksi / blok kalimat atau isu saham, contohnya:
+     > *"BBRI laba bersih tembus 60 triliun kuartal ini"* atau *"GOTO mau diakuisisi konglomerat"*
+   - **Langkah 3:** Perhatikan toolbar seleksi teks yang muncul mengambang di atas teks (berisi *Salin / Copy*, *Tempel / Paste*, dsb).
+   - **Langkah 4:** Cari dan pilih menu **"Tilik AI"** (jika tertutup tombol panah/titik tiga overflow, geser toolbar ke samping).
+   - **Langkah 5 (Hasil yang Diharapkan):**
+     - Menu teks menutup seketika tanpa ada kedipan layar hitam (*zero flicker*).
+     - Modal Bottom Sheet Tilik **langsung muncul dari bawah layar**.
+     - Teks yang Anda seleksi sudah **otomatis terisi di kolom klaim**, tanpa perlu menyalin (*copy-paste*) manual.
+     - Kode emiten (misal `$BBRI` atau `$GOTO`) otomatis terdeteksi dengan badge hijau menyala di atas kolom input.
+     - Tombol oranye **"Periksa Fakta di Sectors API"** langsung siap ditekan.
+     - Keyboard tidak menutupi atau meremukkan (*squish*) modal sheet.
+
+3. **Verifikasi Integritas Floating Bubble:**
+   - Tekan tanda silang **(X)** atau ketuk di luar area sheet untuk menutupnya.
+   - Ketuk langsung floating bubble Tilik di tepi layar.
+   - **Hasil yang Diharapkan:** Floating bubble tetap responsif membuka modal sheet secara normal, auto-tuck 3 detik tetap aktif, dan fisika snap-to-edge tetap bekerja sempurna.

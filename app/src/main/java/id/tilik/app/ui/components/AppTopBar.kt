@@ -60,7 +60,8 @@ fun AppTopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(AppBackground)
+            .background(Color(0xE60A0A0A))
+            .border(1.dp, Color(0x14FFFFFF))
             .statusBarsPadding()
             .padding(horizontal = 20.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -104,7 +105,7 @@ fun AppTopBar(
 
             Column {
                 Text(
-                    text = "Hi, Good morning",
+                    text = "Selamat datang kembali,",
                     color = TextSecondary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Normal
