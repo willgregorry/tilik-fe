@@ -224,6 +224,27 @@ object AuthRepository {
         return historyDetailCache[historyId]?.data
     }
 
+    fun cacheVerificationDetail(verification: id.tilik.app.data.model.VerificationResponse, claimText: String? = null): String {
+        val id = verification.historyId?.takeIf { it.isNotBlank() } ?: "temp_${verification.ticker ?: "IDX"}_${System.currentTimeMillis()}"
+        val detail = HistoryDetailResponse(
+            status = "success",
+            id = id,
+            createdAt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).format(java.util.Date()),
+            tweetText = claimText ?: verification.summary ?: "Klaim Saham ${verification.ticker ?: ""}",
+            sourcePlatform = "x",
+            verification = verification
+        )
+        historyDetailCache[id] = CacheEntry(detail, System.currentTimeMillis())
+        return id
+    }
+
+    fun getCachedHistoryDetailByTicker(ticker: String): HistoryDetailResponse? {
+        val cleanTicker = ticker.trim().uppercase()
+        return historyDetailCache.values
+            .map { it.data }
+            .firstOrNull { it.verification.ticker?.uppercase() == cleanTicker }
+    }
+
     fun invalidateHistoryCache() {
         historyListCache = null
         historyDetailCache.clear()

@@ -67,6 +67,16 @@ enum class MainScreenDestination {
 
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        const val EXTRA_NAVIGATE_TAB = "extra_navigate_tab"
+        const val EXTRA_TICKER = "extra_ticker"
+        const val EXTRA_HISTORY_ID = "extra_history_id"
+    }
+
+    private var targetTabState by mutableStateOf<AppTab?>(null)
+    private var targetTickerState by mutableStateOf<String?>(null)
+    private var targetHistoryIdState by mutableStateOf<String?>(null)
+
     private var hasOverlayPermission by mutableStateOf(false)
     private var hasAudioPermission by mutableStateOf(false)
     private var hasProjectionPermission by mutableStateOf(false)
@@ -182,6 +192,7 @@ class MainActivity : ComponentActivity() {
             startTilikService()
         }
         handleClaimIntent(intent)
+        handleNavigationIntent(intent)
 
         setContent {
             TilikTheme {
@@ -207,6 +218,20 @@ class MainActivity : ComponentActivity() {
                         var selectedMarketStock by remember { mutableStateOf<String?>(null) }
                         var selectedHistoryId by remember { mutableStateOf<String?>(null) }
 
+                        LaunchedEffect(targetTabState, targetTickerState, targetHistoryIdState) {
+                            val tab = targetTabState
+                            if (tab != null) {
+                                currentTab = tab
+                                if (!targetTickerState.isNullOrBlank()) selectedMarketStock = targetTickerState
+                                if (!targetHistoryIdState.isNullOrBlank()) selectedHistoryId = targetHistoryIdState
+                                isNotificationsScreenVisible = false
+                                isProfileDetailVisible = false
+                                targetTabState = null
+                                targetTickerState = null
+                                targetHistoryIdState = null
+                            }
+                        }
+
                         val currentDestination = when {
                             !isLoggedIn -> MainScreenDestination.AUTH
                             !isRoleOnboardingDone -> MainScreenDestination.ROLE_SELECTION
@@ -224,13 +249,14 @@ class MainActivity : ComponentActivity() {
                         }
                         BackHandler(
                             enabled = !isProfileDetailVisible && !isNotificationsScreenVisible &&
-                                    currentTab == AppTab.MARKETS && selectedHistoryId != null
+                                    currentTab == AppTab.MARKETS && (selectedHistoryId != null || selectedMarketStock != null)
                         ) {
                             selectedHistoryId = null
+                            selectedMarketStock = null
                         }
                         BackHandler(
                             enabled = !isProfileDetailVisible && !isNotificationsScreenVisible &&
-                                    currentTab != AppTab.HOME && selectedHistoryId == null
+                                    currentTab != AppTab.HOME && selectedHistoryId == null && selectedMarketStock == null
                         ) {
                             currentTab = AppTab.HOME
                         }
@@ -445,6 +471,7 @@ class MainActivity : ComponentActivity() {
                                                             initialTicker = selectedMarketStock,
                                                             onBackClick = {
                                                                 selectedHistoryId = null
+                                                                selectedMarketStock = null
                                                             }
                                                         )
                                                     }
@@ -502,7 +529,22 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         handleClaimIntent(intent)
+        handleNavigationIntent(intent)
+    }
+
+    private fun handleNavigationIntent(intent: Intent?) {
+        val tab = intent?.getStringExtra(EXTRA_NAVIGATE_TAB)
+        val ticker = intent?.getStringExtra(EXTRA_TICKER)
+        val histId = intent?.getStringExtra(EXTRA_HISTORY_ID)
+
+        if (tab == "MARKETS" || !ticker.isNullOrBlank() || !histId.isNullOrBlank()) {
+            isSplashActive = false
+            targetTabState = AppTab.MARKETS
+            targetTickerState = ticker
+            targetHistoryIdState = histId
+        }
     }
 
     private fun handleClaimIntent(intent: Intent?) {

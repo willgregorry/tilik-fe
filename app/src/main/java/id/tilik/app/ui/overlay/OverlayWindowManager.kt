@@ -46,6 +46,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import id.tilik.app.MainActivity
 import id.tilik.app.data.model.VerificationResponse
 import id.tilik.app.model.OverlayState
 import id.tilik.app.ui.theme.TilikTheme
@@ -438,6 +439,12 @@ class OverlayWindowManager(
                                                     claimText = currentClaimText,
                                                     ticker = detectedTicker
                                                 )
+                                            },
+                                            onOpenDetailClick = {
+                                                openDetailInApp(
+                                                    ticker = currentData?.ticker ?: detectedTicker,
+                                                    historyId = currentData?.historyId
+                                                )
                                             }
                                         )
                                     }
@@ -569,6 +576,27 @@ class OverlayWindowManager(
     private fun untuckBubble(animate: Boolean = true) {
         idleHandler.removeCallbacks(tuckRunnable)
         isTucked = false
+    }
+
+    fun openDetailInApp(ticker: String?, historyId: String?) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            action = Intent.ACTION_MAIN
+            addCategory(Intent.CATEGORY_LAUNCHER)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra(MainActivity.EXTRA_NAVIGATE_TAB, "MARKETS")
+            if (!ticker.isNullOrBlank()) {
+                putExtra(MainActivity.EXTRA_TICKER, ticker)
+            }
+            if (!historyId.isNullOrBlank()) {
+                putExtra(MainActivity.EXTRA_HISTORY_ID, historyId)
+            }
+        }
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Timber.tag("TILIK_OVERLAY").e(e, "Gagal membuka aplikasi Tilik dari overlay: %s", e.message)
+        }
+        onCloseClicked()
     }
 
     fun hide() {

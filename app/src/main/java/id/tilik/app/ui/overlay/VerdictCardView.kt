@@ -1,5 +1,6 @@
 package id.tilik.app.ui.overlay
 
+import android.content.Intent
 import android.graphics.BitmapFactory
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutLinearInEasing
@@ -36,10 +37,12 @@ import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.OpenInFull
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import id.tilik.app.MainActivity
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -101,7 +104,8 @@ fun VerdictCardView(
     claimText: String? = null,
     isLoading: Boolean = false,
     onCloseClick: () -> Unit,
-    onReturnToInput: () -> Unit = onCloseClick
+    onReturnToInput: () -> Unit = onCloseClick,
+    onOpenDetailClick: (() -> Unit)? = null
 ) {
     if (isLoading) {
         VerdictCardSkeleton(
@@ -251,6 +255,30 @@ fun VerdictCardView(
             }
 
             val isFailed = data.status == "failed" || data.verdict == "-"
+            val context = LocalContext.current
+            val handleOpenDetail: () -> Unit = {
+                if (onOpenDetailClick != null) {
+                    onOpenDetailClick()
+                } else {
+                    val intent = Intent(context, MainActivity::class.java).apply {
+                        action = Intent.ACTION_MAIN
+                        addCategory(Intent.CATEGORY_LAUNCHER)
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        putExtra(MainActivity.EXTRA_NAVIGATE_TAB, "MARKETS")
+                        if (!data.ticker.isNullOrBlank()) {
+                            putExtra(MainActivity.EXTRA_TICKER, data.ticker)
+                        }
+                        if (!data.historyId.isNullOrBlank()) {
+                            putExtra(MainActivity.EXTRA_HISTORY_ID, data.historyId)
+                        }
+                    }
+                    try {
+                        context.startActivity(intent)
+                    } catch (_: Exception) {}
+                    onCloseClick()
+                }
+            }
+
             // Pinned Bottom Action Button (GoPay / OVO Style)
             Box(
                 modifier = Modifier
@@ -259,18 +287,18 @@ fun VerdictCardView(
                     .border(1.dp, BorderColor)
                     .padding(horizontal = 20.dp, vertical = 12.dp)
             ) {
-                Button(
-                    onClick = if (isFailed) onReturnToInput else onCloseClick,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = BrandPrimary,
-                        contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                ) {
-                    if (isFailed) {
+                if (isFailed) {
+                    Button(
+                        onClick = onReturnToInput,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = BrandPrimary,
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = null,
@@ -282,12 +310,54 @@ fun VerdictCardView(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
-                    } else {
-                        Text(
-                            text = "Tutup",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = onCloseClick,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0x14FFFFFF),
+                                contentColor = TextPrimary
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .weight(0.9f)
+                                .height(48.dp)
+                        ) {
+                            Text(
+                                text = "Tutup",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        Button(
+                            onClick = handleOpenDetail,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = BrandPrimary,
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .weight(1.3f)
+                                .height(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.OpenInFull,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Lihat Detail",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }

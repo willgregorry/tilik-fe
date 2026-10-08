@@ -712,3 +712,36 @@ Skenario ini memverifikasi integrasi native Android text selection toolbar (`ACT
    - Tekan tanda silang **(X)** atau ketuk di luar area sheet untuk menutupnya.
    - Ketuk langsung floating bubble Tilik di tepi layar.
    - **Hasil yang Diharapkan:** Floating bubble tetap responsif membuka modal sheet secara normal, auto-tuck 3 detik tetap aktif, dan fisika snap-to-edge tetap bekerja sempurna.
+
+---
+
+### Skenario 29: Uji Tombol "Lihat Detail" Hasil Cek Fakta ke Layar Markets Aplikasi Tilik
+
+Skenario ini memverifikasi integrasi tombol **"Lihat Detail"** pada modal hasil pemeriksaan fakta (*Verdict Card*) yang menghubungkan langsung overlay melayang ke layar **Markets (Detail Forensik Bursa)** di dalam aplikasi Tilik:
+
+1. **Langkah Pengujian Langsung di HP:**
+   - **Langkah 1:** Buka aplikasi lain (misalnya WhatsApp, Twitter/X, Chrome) saat floating bubble Tilik aktif.
+   - **Langkah 2:** Salin atau ketik klaim saham emiten, misalnya:
+     > *"BBRI cetak rekor laba bersih dan dividen jumbo tahun ini"*
+   - **Langkah 3:** Buka Bottom Sheet Tilik (bisa otomatis atau ketuk bubble Tilik), lalu tekan tombol **"Periksa Fakta di Sectors API"**.
+   - **Langkah 4:** Tunggu beberapa detik hingga proses analisis selesai dan modal hasil vonis (*Verdict Card*) muncul di layar.
+   - **Langkah 5 (Perhatikan Tombol Aksi di Bawah):**
+     - Di bagian bawah layar (*pinned action bar*), kini tersedia **2 tombol** rapi berdampingan:
+       - Tombol **"Tutup"** (kontainer gelap elegan) untuk menutup sheet.
+       - Tombol **"Lihat Detail"** (aksen oranye `#FF5C35` kontras tinggi dengan ikon panah ekspansi).
+   - **Langkah 6:** Tekan tombol **"Lihat Detail"**.
+
+2. **Hasil yang Diharapkan:**
+   - Modal bottom sheet melayang **otomatis diminimize/ditutup** kembali ke floating bubble di tepi layar.
+   - Aplikasi utama **Tilik langsung terbuka ke depan layar** (*brought to front* via Android Intent flags).
+   - Tilik **langsung berpindah ke tab Markets** tanpa perlu menekan navigasi bawah secara manual.
+   - Di tab Markets, judul **"Detail Forensik Bursa"** langsung merender kartu analisis emiten (misalnya **BBRI**):
+     - Badge vonis (*Sesuai Fakta / Dilebih-lebihkan / Menyesatkan*) dengan persentase keyakinan.
+     - Teks klaim yang ditelusuri.
+     - Poin-poin telaah fakta & bukti forensik.
+     - Metrik Valuasi & Konsensus PE/PBV Sectors API.
+     - Arus Broker & Akumulasi Investor Asing (*Foreign Flow*).
+     - Kesehatan Finansial & Notasi Khusus BEI.
+   - **Zero Flicker / Zero Lag:** Data langsung tampil seketika (*instant pre-warmed cache*) tanpa blank loading spinner lama.
+   - **Uji Navigasi Balik:** Tekan tombol panah kembali (<-) di kiri atas header Markets atau gunakan gestur back HP -> Layar Markets kembali ke status unselected ("Belum Ada Forensik Dipilih"), dan tekan sekali lagi kembali ke Beranda (Home).
+

@@ -77,9 +77,10 @@ fun MarketsScreen(
     var selectedTicker by remember { mutableStateOf(initialTicker ?: "") }
     val scrollState = rememberScrollState()
 
-    LaunchedEffect(historyId) {
+    LaunchedEffect(historyId, initialTicker) {
         if (!historyId.isNullOrBlank()) {
             val cached = AuthRepository.getCachedHistoryDetail(historyId)
+                ?: if (!initialTicker.isNullOrBlank()) AuthRepository.getCachedHistoryDetailByTicker(initialTicker) else null
             if (cached != null) {
                 detailResponse = cached
                 cached.verification?.ticker?.let {
@@ -94,9 +95,23 @@ fun MarketsScreen(
                     detailResponse?.verification?.ticker?.let {
                         selectedTicker = it
                     }
+                } else if (!initialTicker.isNullOrBlank()) {
+                    val fallbackCached = AuthRepository.getCachedHistoryDetailByTicker(initialTicker)
+                    if (fallbackCached != null) {
+                        detailResponse = fallbackCached
+                        selectedTicker = initialTicker
+                    }
                 }
                 isLoading = false
             }
+        } else if (!initialTicker.isNullOrBlank()) {
+            selectedTicker = initialTicker
+            val cached = AuthRepository.getCachedHistoryDetailByTicker(initialTicker)
+            detailResponse = cached
+            isLoading = false
+        } else {
+            detailResponse = null
+            selectedTicker = ""
         }
     }
 
@@ -116,7 +131,7 @@ fun MarketsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (onBackClick != null) {
+                if (onBackClick != null && (detailResponse != null || selectedTicker.isNotBlank())) {
                     Box(
                         modifier = Modifier
                             .size(38.dp)

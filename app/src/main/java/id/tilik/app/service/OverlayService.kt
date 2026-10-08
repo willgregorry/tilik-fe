@@ -27,6 +27,7 @@ import id.tilik.app.data.model.FactCheckPoint
 import id.tilik.app.data.model.FinancialHealthDetail
 import id.tilik.app.data.model.ValuationPeerDetail
 import id.tilik.app.data.model.VerificationResponse
+import id.tilik.app.data.repository.AuthRepository
 import id.tilik.app.data.repository.VerificationRepository
 import id.tilik.app.data.repository.VerificationRepositoryImpl
 import id.tilik.app.model.OverlayState
@@ -267,7 +268,18 @@ class OverlayService : Service() {
                 Timber.tag("TILIK_TERMINAL").e(e, "Gagal melakukan verifikasi API: ${e.message}")
             }
 
-            val finalData = verifiedData ?: createFailedData(resolvedTicker, claim)
+            var finalData = verifiedData ?: createFailedData(resolvedTicker, claim)
+
+            if (finalData.status != "failed" && finalData.verdict != "-") {
+                try {
+                    val cachedId = AuthRepository.cacheVerificationDetail(finalData, claim)
+                    if (finalData.historyId.isNullOrBlank()) {
+                        finalData = finalData.copy(historyId = cachedId)
+                    }
+                } catch (e: Exception) {
+                    Timber.tag("TILIK_TERMINAL").w("Gagal meng-cache hasil verifikasi: ${e.message}")
+                }
+            }
 
             delay(250)
 
